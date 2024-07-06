@@ -1,5 +1,5 @@
 const express = require('express');
-const validate = require('express-validation');
+const { validate } = require('express-validation');
 const controller = require('../../controllers/user.controller');
 const { authorize, ADMIN, LOGGED_USER } = require('../../middlewares/auth');
 const {
@@ -39,7 +39,7 @@ router
    * @apiError (Unauthorized 401)  Unauthorized  Only authenticated users can access the data
    * @apiError (Forbidden 403)     Forbidden     Only admins can access the data
    */
-  .get(authorize(ADMIN),  controller.list)
+  .get(validate(listUsers), authorize(ADMIN),  controller.list)
   /**
    * @api {post} v1/users Create User
    * @apiDescription Create a new user
@@ -65,7 +65,7 @@ router
    * @apiError (Unauthorized 401)  Unauthorized     Only authenticated users can create the data
    * @apiError (Forbidden 403)     Forbidden        Only admins can create the data
    */
-  .post(authorize(ADMIN),  controller.create);
+  .post(validate(createUser), authorize(ADMIN),  controller.create);
 
 router
   .route('/profile')
@@ -139,7 +139,7 @@ router
    * @apiError (Forbidden 403)    Forbidden    Only user with same id or admins can modify the data
    * @apiError (Not Found 404)    NotFound     User does not exist
    */
-  .put(authorize(LOGGED_USER), controller.replace)
+  .put(validate(replaceUser), authorize(LOGGED_USER), controller.replace)
   /**
    * @api {patch} v1/users/:id Update User
    * @apiDescription Update some fields of a user document
@@ -167,7 +167,7 @@ router
    * @apiError (Forbidden 403)    Forbidden    Only user with same id or admins can modify the data
    * @apiError (Not Found 404)    NotFound     User does not exist
    */
-  .patch(authorize(LOGGED_USER), controller.update)
+  .patch(validate(updateUser),authorize(LOGGED_USER), controller.update)
   /**
    * @api {patch} v1/users/:id Delete User
    * @apiDescription Delete a user

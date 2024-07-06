@@ -1,5 +1,5 @@
 const express = require('express');
-const validate = require('express-validation');
+const { validate } = require('express-validation');
 const controller = require('../../controllers/auth.controller');
 const oAuthLogin = require('../../middlewares/auth').oAuth;
 const {
@@ -7,8 +7,7 @@ const {
   register,
   oAuth,
   refresh,
-  sendPasswordReset,
-  passwordReset,
+  sendPasswordReset
 } = require('../../validations/auth.validation');
 
 const router = express.Router();
@@ -41,7 +40,7 @@ const router = express.Router();
  * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
  */
 router.route('/register')
-  .post(controller.register);
+  .post(validate(register), controller.register);
 
 /**
  * @api {post} v1/auth/login Login
@@ -71,7 +70,7 @@ router.route('/register')
  * @apiError (Unauthorized 401)  Unauthorized     Incorrect email or password
  */
 router.route('/login')
-  .post(controller.login);
+  .post(validate(login),controller.login);
 
 /**
  * @api {post} v1/auth/refresh-token Refresh Token
@@ -93,13 +92,10 @@ router.route('/login')
  * @apiError (Unauthorized 401)  Unauthorized     Incorrect email or refreshToken
  */
 router.route('/refresh-token')
-  .post(controller.refresh);
+  .post(validate(refresh),controller.refresh);
 
 router.route('/send-password-reset')
-  .post(controller.sendPasswordReset);
-
-// router.route('/reset-password')
-//   .post(controller.resetPassword);
+  .post(validate(sendPasswordReset), controller.sendPasswordReset);
 
 /**
  * @api {post} v1/auth/facebook Facebook Login
@@ -122,7 +118,7 @@ router.route('/send-password-reset')
 // router.route('/facebook')
 //   .post(validate(oAuth), oAuthLogin('facebook'), controller.oAuth);
 router.route('/facebook')
-  .post(oAuthLogin('facebook'), controller.oAuth);
+  .post(validate(oAuth), oAuthLogin('facebook'), controller.oAuth);
 
 /**
  * @api {post} v1/auth/google Google Login
@@ -143,6 +139,6 @@ router.route('/facebook')
  * @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
  */
 router.route('/google')
-  .post(oAuthLogin('google'), controller.oAuth);
+  .post(validate(oAuth), oAuthLogin('google'), controller.oAuth);
 
 module.exports = router;
