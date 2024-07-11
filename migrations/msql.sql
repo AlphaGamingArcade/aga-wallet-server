@@ -1,13 +1,13 @@
 CREATE TABLE blockchain_user (
     user_id INT IDENTITY(1,1) PRIMARY KEY,
-    email VARCHAR(128) NOT NULL UNIQUE,
-    password VARCHAR(128) NOT NULL,
-    name VARCHAR(128) NOT NULL,
-    services TEXT,
-    role CHAR(1) NOT NULL,
-    picture TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    user_email VARCHAR(128) NOT NULL UNIQUE,
+    user_password VARCHAR(128) NOT NULL,
+    user_name VARCHAR(128) NOT NULL,
+    user_services TEXT,
+    user_role CHAR(1) NOT NULL,
+    user_picture TEXT,
+    user_created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    user_updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE blockchain_wallet (
@@ -19,6 +19,17 @@ CREATE TABLE blockchain_wallet (
     wallet_mnemonic VARCHAR(256) NOT NULL UNIQUE, -- Increased size for mnemonic
     wallet_address VARCHAR(256) NOT NULL UNIQUE,
     wallet_password VARCHAR(20) NOT NULL, -- Increased size for password
-    created_at DATETIME DEFAULT GETDATE(),
-    updated_at DATETIME DEFAULT GETDATE()
+    wallet_created_at DATETIME DEFAULT GETDATE(),
+    wallet_updated_at DATETIME DEFAULT GETDATE()
 );
+
+CREATE TABLE blockchain_transaction(
+    tx_id INT IDENTITY(1, 1) PRIMARY KEY,
+    tx_user_id INT NOT NULL,
+    tx_wallet_sender_address VARCHAR(256) NOT NULL,
+    tx_wallet_recipient_address VARCHAR(256) NOT NULL,
+    tx_amount INT NOT NULL,
+    tx_status CHAR(1) NOT NULL,
+    tx_created_at DATETIME DEFAULT GETDATE(),
+    tx_updated_at DATETIME DEFAULT GETDATE()
+)

@@ -8,7 +8,7 @@ exports.getUserById = async (id) => {
     if(id){
         const params = {
             tablename: "blockchain_user", 
-            columns: ["user_id, email, name, services, role, picture"], 
+            columns: ["user_id, user_email, user_name, user_services, user_role, user_picture"], 
             condition: `user_id=${id}`
         }
         user = await SQLFunctions.selectQuery(params);
@@ -28,7 +28,7 @@ exports.saveUser = async (user) => {
     const { email, password, name, services, role, picture } = user;
     const params = {
         tablename: "blockchain_user",
-        columns: ['email', 'password', 'name', 'services', 'role', 'picture'],
+        columns: ['user_email', 'user_password', 'user_name', 'user_services', 'user_role', 'user_picture'],
         newValues: [email, password, name, services, role, picture]
     }
     const { responseCode } = await SQLFunctions.insertQuery(params);

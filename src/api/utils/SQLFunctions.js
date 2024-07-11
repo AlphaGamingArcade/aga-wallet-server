@@ -21,7 +21,6 @@ module.exports = class SQLFunctions {
       const db = await connectDb();
       try {
         const { tablename, columns, condition } = params;
-        console.log(`SELECT ${columns.join(', ')} FROM ${tablename} WHERE ${condition}`)
         const query = `SELECT ${columns.join(', ')} FROM ${tablename} WHERE ${condition}`;
         const result = await db.request().query(query);
         return { data: result.recordset[0] };
