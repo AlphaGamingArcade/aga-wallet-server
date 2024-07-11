@@ -1,0 +1,43 @@
+ACCOUNT 1
+Password: 1234
+AURA
+Secret phrase:       despair neutral episode card rigid excuse average multiply nerve cigar garage ozone
+  Network ID:        substrate
+  Secret seed:       0x0ec236da84963c57007eb3064fb7706092e64b835fca38f38fdad9c5be87b545
+  Public key (hex):  0xb6ac2853ca8ac4754e43a2645da9c8398980f6b603ab02a758c82be3acb60c1f
+  Account ID:        0xb6ac2853ca8ac4754e43a2645da9c8398980f6b603ab02a758c82be3acb60c1f
+  Public key (SS58): 5GCDiLxLqvEfiJSJz6h2JGQiF9pT1Ci2MKWG4SPSQ9X1mFF1
+  SS58 Address:      5GCDiLxLqvEfiJSJz6h2JGQiF9pT1Ci2MKWG4SPSQ9X1mFF1
+
+GRANDPA
+Secret phrase:       despair neutral episode card rigid excuse average multiply nerve cigar garage ozone
+  Network ID:        substrate
+  Secret seed:       0x0ec236da84963c57007eb3064fb7706092e64b835fca38f38fdad9c5be87b545
+  Public key (hex):  0x048c83cb699b0b1a1defa30090c30da7df0eaa211ad8a476c1f3189413e92145
+  Account ID:        0x048c83cb699b0b1a1defa30090c30da7df0eaa211ad8a476c1f3189413e92145
+  Public key (SS58): 5CAfnntejkHjFEAvmKMEpHcfG1qatgRGBLjF7dBkppfoUcwB
+  SS58 Address:      5CAfnntejkHjFEAvmKMEpHcfG1qatgRGBLjF7dBkppfoUcwB
+
+
+
+ACCOUNT 2
+Password: 1234
+AURA
+Secret phrase:       burger burger harsh hospital insect alarm fold bring tide impulse flush quit
+Network ID:        substrate
+Secret seed:       0x446f6255d268077f1257ec0cd484c280f0d2f1c0879dec22245b3de7542971eb
+Public key (hex):  0xac52a5606019bf74c4173d7d90931b29c074965698682757bf23227b182ef14c
+Account ID:        0xac52a5606019bf74c4173d7d90931b29c074965698682757bf23227b182ef14c
+Public key (SS58): 5FxeeKkGpE21wBGJYhhD7drVPYixgGiWGgnoknu3bha7fEq8
+SS58 Address:      5FxeeKkGpE21wBGJYhhD7drVPYixgGiWGgnoknu3bha7fEq8
+
+GRANDPA
+Secret phrase:       burger burger harsh hospital insect alarm fold bring tide impulse flush quit
+Network ID:        substrate
+Secret seed:       0x446f6255d268077f1257ec0cd484c280f0d2f1c0879dec22245b3de7542971eb
+Public key (hex):  0xbb39f6ac7d43bd1d6db5dfd4983e8bfdd34c45ae267c3a82f197e99a1db57f9a
+Account ID:        0xbb39f6ac7d43bd1d6db5dfd4983e8bfdd34c45ae267c3a82f197e99a1db57f9a
+Public key (SS58): 5GJC2iSZ6Ax3n4T1ZWzFHi2eqdxF7ptCLRFEstr7V6FKjyi7
+SS58 Address:      5GJC2iSZ6Ax3n4T1ZWzFHi2eqdxF7ptCLRFEstr7V6FKjyi7
+
+

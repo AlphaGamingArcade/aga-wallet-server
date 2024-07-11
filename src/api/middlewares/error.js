@@ -1,5 +1,5 @@
 const httpStatus = require('http-status');
-const expressValidation = require('express-validation');
+const { ValidationError } = require('express-validation');
 const APIError = require('../errors/api-error');
 const { env } = require('../../config/vars');
 
@@ -31,7 +31,7 @@ exports.handler = handler;
 exports.converter = (err, req, res, next) => {
   let convertedError = err;
 
-  if (err instanceof expressValidation.ValidationError) {
+  if (err instanceof ValidationError) {
     convertedError = new APIError({
       message: 'Validation Error',
       errors: err.errors,
