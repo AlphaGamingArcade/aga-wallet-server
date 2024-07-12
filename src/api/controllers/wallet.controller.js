@@ -3,6 +3,7 @@ const { saveWallet, STATUS_ACTIVE, checkDuplicateWallet, getWalletByAddress } = 
 const { getUserById } = require("../models/user.model");
 const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
+const { getWalletBalance } = require("../services/chainprovider");
 
 /**
  * Load wallet and append to req.locals.
@@ -11,7 +12,8 @@ const { mnemonicGenerate } = require('@polkadot/util-crypto');
 exports.load = async (req, res, next, address) => {
   try {
     const wallet = await getWalletByAddress(address);
-    req.locals = { wallet };
+    const data = await getWalletBalance(address);
+    req.locals = { wallet: { ...wallet, ...data } };
     return next();
   } catch (error) {
     return next(error);

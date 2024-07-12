@@ -7,7 +7,6 @@ module.exports = class SQLFunctions {
         const { tablename, columns, newValues } = params;
         const query = `INSERT INTO ${tablename} (${columns.join(', ')}) VALUES (${newValues.join(', ')})`;
         const request = db.request();
-        columns.forEach((col, i) => request.input(col, newValues[i]));
         await request.query(query);
         return { responseCode: 0 };
       } catch (error) {

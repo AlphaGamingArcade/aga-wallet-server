@@ -25,11 +25,11 @@ CREATE TABLE blockchain_wallet (
 
 CREATE TABLE blockchain_transaction(
     tx_id INT IDENTITY(1, 1) PRIMARY KEY,
-    tx_user_id INT NOT NULL,
     tx_wallet_sender_address VARCHAR(256) NOT NULL,
     tx_wallet_recipient_address VARCHAR(256) NOT NULL,
-    tx_amount INT NOT NULL,
+    tx_amount DECIMAL(100, 4) NOT NULL,
     tx_status CHAR(1) NOT NULL,
+    tx_hash VARCHAR(256) NOT NULL,
     tx_created_at DATETIME DEFAULT GETDATE(),
     tx_updated_at DATETIME DEFAULT GETDATE()
 )

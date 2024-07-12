@@ -1,0 +1,1 @@
+{"level":"error","message":"Transaction failed, TypeError: api.tx.balances.transfer is not a function"}
