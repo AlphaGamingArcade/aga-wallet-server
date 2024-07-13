@@ -33,3 +33,11 @@ CREATE TABLE blockchain_transaction(
     tx_created_at DATETIME DEFAULT GETDATE(),
     tx_updated_at DATETIME DEFAULT GETDATE()
 )
+
+CREATE TABLE blockchain_token(
+    token_id INT IDENTITY(1, 1) PRIMARY KEY,
+    token_user_id INT NOT NULL,
+    token VARCHAR(258) NOT NULL,
+    token_user_email VARCHAR(258) NOT NULL,
+    token_expires DATETIME
+)

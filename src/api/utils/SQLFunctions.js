@@ -71,4 +71,21 @@ module.exports = class SQLFunctions {
         db.release();
       }
     }
+
+    static selectLeftJoinSingle = async (params) => {
+      let db = await connectDb();
+      try {
+        const query = await db
+          .request()
+          .query(`select ${params.join} where ${params.condition}`);
+        return { responsecode: 0, data: query.recordset[0] };
+      } catch (error) {
+        const message = "Invalid JOIN QUERY";
+        throw new Error(message);
+      } finally {
+        db.release();
+      }
+    };
+
+
   };

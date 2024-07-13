@@ -1,16 +1,19 @@
 const httpStatus = require('http-status');
 const moment = require('moment-timezone');
-const { jwtExpirationInterval } = require('../../config/vars');
+const { jwtExpirationInterval, env } = require('../../config/vars');
 const APIError = require('../errors/api-error');
 const emailProvider = require('../services/emails/emailProvider');
+const { saveUser, ROLE_USER, checkDuplicateUser, findAndGenerateToken } = require('../models/user.model');
+const { generateRefreshToken } = require('../models/refreshToken.model');
+const bcrypt = require('bcryptjs')
 
 /**
  * Returns a formated object with tokens
  * @private
  */
-function generateTokenResponse(user, accessToken) {
+exports.generateTokenResponse = async (user, accessToken) => {
   const tokenType = 'Bearer';
-  const refreshToken = "sasas";
+  const refreshToken = await generateRefreshToken(user);
   const expiresIn = moment().add(jwtExpirationInterval, 'minutes');
   return {
     tokenType,
@@ -26,14 +29,26 @@ function generateTokenResponse(user, accessToken) {
  */
 exports.register = async (req, res, next) => {
   try {
-    const user = {};
-    const userTransformed = user.transform();
-    const token = generateTokenResponse(user, user.token());
+    let password = req.body.password
+    const rounds = env === 'test' ? 1 : 10;
+    const hash = await bcrypt.hash(password, rounds);
+    password = hash;
+
+    const userData = {
+      name: req.body.name,
+      email: req.body.email,
+      password: password,
+      services: "email/password",
+      role: ROLE_USER,
+      picture: ''
+    };
+  
+    const user = await saveUser(userData);
+    const token = await this.generateTokenResponse(user, user.token);
     res.status(httpStatus.CREATED);
-    return res.json({ token, user: userTransformed });
+    return res.json({ token, user });
   } catch (error) {
-    // return next(User.checkDuplicateEmail(error));
-    return next();
+    return next(checkDuplicateUser(error));
   }
 };
 
@@ -43,11 +58,9 @@ exports.register = async (req, res, next) => {
  */
 exports.login = async (req, res, next) => {
   try {
-    // const { user, accessToken } = await User.findAndGenerateToken(req.body);
-    const { user, accessToken } = { user: 1, accessToken: "@1212" };
-    const token = generateTokenResponse(user, accessToken);
-    const userTransformed = user.transform();
-    return res.json({ token, user: userTransformed });
+    const { user, accessToken } = await findAndGenerateToken(req.body);
+    const token = await this.generateTokenResponse(user, accessToken);
+    return res.json({ token, user });
   } catch (error) {
     return next(error);
   }
@@ -104,7 +117,7 @@ exports.sendPasswordReset = async (req, res, next) => {
   }
 };
 
-exportsresetPassword = async (req, res, next) => {
+exports.resetPassword = async (req, res, next) => {
   try {
     const { email, password, resetToken } = req.body;
     const resetTokenObject = {}
