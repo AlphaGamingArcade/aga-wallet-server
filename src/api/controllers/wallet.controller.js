@@ -4,6 +4,8 @@ const { getUserById } = require("../models/user.model");
 const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
 const { getWalletBalance } = require("../services/chainprovider");
+const { env } = require("../../config/vars");
+const bcrypt = require("bcryptjs")
 
 /**
  * Load wallet and append to req.locals.
@@ -32,10 +34,15 @@ exports.get = (req, res) => res.json(req.locals.wallet);
  */
 exports.create = async (req, res, next) => {
   try {
-    const user = await getUserById(req.body.user_id);
+    const user = await getUserById(req.user.user_id);
     const keyring = new Keyring();
     const mnemonic = mnemonicGenerate();
     const pair = keyring.createFromUri(mnemonic);
+
+    let password = req.body.password
+    const rounds = env === 'test' ? 1 : 10;
+    const hash = await bcrypt.hash(password, rounds);
+    password = hash;
 
     const wallet = await saveWallet({
       userId: user.user_id, 
@@ -43,7 +50,7 @@ exports.create = async (req, res, next) => {
       walletAlias: "", 
       walletStatus: STATUS_ACTIVE, 
       walletMnemonic: mnemonic, 
-      walletPassword: req.body.password,
+      walletPassword: password,
       walletAddress: pair.address
     });
 

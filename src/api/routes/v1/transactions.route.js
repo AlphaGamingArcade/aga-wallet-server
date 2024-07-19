@@ -2,6 +2,7 @@ const express = require('express');
 const { validate } = require('express-validation');
 const controller = require('../../controllers/transaction.controller');
 const { sendTransaction, getTransaction } = require('../../validations/transaction.validation');
+const { authorize } = require('../../middlewares/auth');
 
 const router = express.Router();
 
@@ -11,10 +12,10 @@ const router = express.Router();
 router.param('transaction_hash', controller.load);
 
 router.route('/:transaction_hash')
-  .get(validate(getTransaction), controller.get)
+  .get(authorize(), validate(getTransaction), controller.get)
 
 router
   .route('/send')
-  .post(validate(sendTransaction), controller.send)
+  .post(authorize(), validate(sendTransaction), controller.send)
 
 module.exports = router;

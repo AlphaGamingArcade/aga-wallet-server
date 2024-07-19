@@ -18,7 +18,7 @@ CREATE TABLE blockchain_wallet (
     wallet_status CHAR(1) NOT NULL, -- A for active, I for inactive
     wallet_mnemonic VARCHAR(256) NOT NULL UNIQUE, -- Increased size for mnemonic
     wallet_address VARCHAR(256) NOT NULL UNIQUE,
-    wallet_password VARCHAR(20) NOT NULL, -- Increased size for password
+    wallet_password VARCHAR(256) NOT NULL, -- Increased size for password
     wallet_created_at DATETIME DEFAULT GETDATE(),
     wallet_updated_at DATETIME DEFAULT GETDATE()
 );

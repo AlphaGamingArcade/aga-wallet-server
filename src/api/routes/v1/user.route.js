@@ -14,7 +14,7 @@ const router = express.Router();
 /**
  * Load user when API with userId route parameter is hit
  */
-router.param('userId', controller.load);
+router.param('user_id', controller.load);
 
 router
   .route('/')
@@ -26,10 +26,10 @@ router
   .get(authorize(), controller.loggedIn);
 
 router
-  .route('/:userId')
+  .route('/:user_id')
   .get(authorize(LOGGED_USER), controller.get)
-  .put(validate(replaceUser), authorize(LOGGED_USER), controller.replace)
-  .patch(validate(updateUser),authorize(LOGGED_USER), controller.update)
+  .put(authorize(LOGGED_USER), validate(replaceUser), controller.replace)
+  .patch(authorize(LOGGED_USER), validate(updateUser), controller.update)
   .delete(authorize(LOGGED_USER), controller.remove);
 
 module.exports = router;

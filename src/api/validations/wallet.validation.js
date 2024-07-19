@@ -10,7 +10,6 @@ module.exports = {
   // POST /v1/wallets
   createWallet:{
     body: Joi.object({
-        user_id: Joi.number().required(),
         account_id: Joi.string().min(6).max(12).required(),
         password: Joi.string().min(6).required()
     })

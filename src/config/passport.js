@@ -3,6 +3,7 @@ const BearerStrategy = require('passport-http-bearer');
 const { ExtractJwt } = require('passport-jwt');
 const { jwtSecret } = require('./vars');
 const authProviders = require('../api/services/authProviders');
+const { getUserById } = require('../api/models/user.model');
 
 const jwtOptions = {
   secretOrKey: jwtSecret,
@@ -11,7 +12,7 @@ const jwtOptions = {
 
 const jwt = async (payload, done) => {
   try {
-    const user = {};
+    const user = await getUserById(payload.sub);
     if (user) return done(null, user);
     return done(null, false);
   } catch (error) {

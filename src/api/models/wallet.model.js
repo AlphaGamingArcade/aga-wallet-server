@@ -1,6 +1,7 @@
 const httpStatus = require("http-status");
 const APIError = require("../errors/api-error");
 const SQLFunctions = require("../utils/sqlFunctions")
+const bcrypt = require('bcryptjs')
 
 const STATUS_ACTIVE = 'a'
 const STATUS_SUSPENDED = 's'
@@ -27,6 +28,38 @@ exports.getWalletByAddress = async (address) => {
     });
 }
 
+exports.walletPasswordMatches = async (password, hashPassword) => {
+    return bcrypt.compare(password, hashPassword);
+}
+
+exports.getUserWallet = async (options) => {
+    const { senderAddress, password, userId } = options;
+    let wallet;
+    if(userId){
+        const params = {
+            tablename: "blockchain_wallet", 
+            columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_address", "wallet_password"], 
+            condition: `wallet_user_id='${userId}' AND wallet_address='${senderAddress}'`
+        }
+        wallet = await SQLFunctions.selectQuery(params);
+    }
+
+    const err = {
+        status: httpStatus.UNAUTHORIZED,
+        isPublic: true
+    };
+
+    if(password){
+        if(wallet.data && await this.walletPasswordMatches(password, wallet.data.wallet_password)){
+            return wallet.data
+        }
+        err.message = 'Incorrect wallet password';
+    } else {
+        err.message =  "Wallet not found"
+    }
+
+    throw new APIError(err);
+}
 
 exports.saveWallet = async (wallet) => {
     const { userId, walletAccount, walletAlias, walletStatus, walletMnemonic, walletAddress, walletPassword } = wallet;

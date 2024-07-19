@@ -1,5 +1,6 @@
 const httpStatus = require('http-status');
 const { omit } = require('lodash');
+const { getUserById } = require('../models/user.model');
 
 /**
  * Load user and append to req.
@@ -7,7 +8,7 @@ const { omit } = require('lodash');
  */
 exports.load = async (req, res, next, id) => {
   try {
-    const user = {};
+    const user = await getUserById(id);
     req.locals = { user };
     return next();
   } catch (error) {
@@ -19,7 +20,7 @@ exports.load = async (req, res, next, id) => {
  * Get user
  * @public
  */
-exports.get = (req, res) => res.json(req.locals.user.transform());
+exports.get = (req, res) => res.json(req.locals.user);
 
 /**
  * Get logged in user info

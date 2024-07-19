@@ -9,18 +9,17 @@ const bcrypt = require('bcryptjs')
 const ROLE_USER = 'u' // USER
 const ROLE_ADMIN = 'a' // ADMIN
 
-exports.generateAccessToken = (email) => {
+exports.generateAccessToken = (id) => {
     const payload = {
         exp: moment().add(jwtExpirationInterval, 'minutes').unix(),
         iat: moment().unix(),
-        sub: email,
+        sub: id,
     };
     return jwt.sign(payload, jwtSecret)
 }
 
 exports.getUserById = async (id) => {
     let user;
-
     if(id){
         const params = {
             tablename: "blockchain_user", 
@@ -29,11 +28,9 @@ exports.getUserById = async (id) => {
         }
         user = await SQLFunctions.selectQuery(params);
     }
-
     if(user.data){
         return user.data
     }
-
     throw new APIError({
         message: 'User does not exist',
         status: httpStatus.NOT_FOUND,
@@ -78,8 +75,7 @@ exports.saveUser = async (user) => {
 
 exports.passwordMatches = async (password, inputPassword) => {
     return bcrypt.compare(password, inputPassword);
-},
-
+}
 
 exports.findAndGenerateToken = async (options) => {
     const { email, password, refreshObject } = options 
@@ -93,14 +89,13 @@ exports.findAndGenerateToken = async (options) => {
     const user = await SQLFunctions.selectQuery(params);
     const err = {
         status: httpStatus.UNAUTHORIZED,
-        isPublic: true,
+        isPublic: true
     };
 
     if(password){
         if(user.data && await this.passwordMatches(password, user.data.user_password)){
             delete user.data.user_password;
-
-            const token = this.generateAccessToken(user.data.user_email);
+            const token = this.generateAccessToken(user.data.user_id);
             return { user: user.data, accessToken: token };
         }
         err.message = 'Incorrect email or password';

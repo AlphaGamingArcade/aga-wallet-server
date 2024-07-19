@@ -2,6 +2,7 @@ const express = require('express');
 const { validate } = require('express-validation');
 const controller = require('../../controllers/wallet.controller');
 const { getWallet, createWallet } = require('../../validations/wallet.validation');
+const { authorize, LOGGED_USER } = require('../../middlewares/auth');
 
 const router = express.Router();
 
@@ -12,9 +13,9 @@ router.param('wallet_address', controller.load);
 
 router
   .route('/:wallet_address')
-  .get(validate(getWallet), controller.get)
+  .get(authorize(), validate(getWallet), controller.get)
 
 router.route('/create')
-  .post(validate(createWallet), controller.create);
+  .post(authorize(), validate(createWallet), controller.create);
 
 module.exports = router;

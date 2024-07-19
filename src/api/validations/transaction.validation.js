@@ -27,7 +27,9 @@ module.exports = {
           'number.base': 'Amount must be a number',
           'any.required': 'Amount is required',
         }),
-        recipient_address: Joi.string().required()
+        sender_address: Joi.string().required(),
+        recipient_address: Joi.string().required(),
+        password: Joi.string().min(6).required()
     })
   }
 }
