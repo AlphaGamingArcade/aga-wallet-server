@@ -4,7 +4,7 @@ const { jwtExpirationInterval, env } = require('../../config/vars');
 const APIError = require('../errors/api-error');
 const emailProvider = require('../services/emails/emailProvider');
 const { saveUser, ROLE_USER, checkDuplicateUser, findAndGenerateToken } = require('../models/user.model');
-const { generateRefreshToken } = require('../models/refreshToken.model');
+const { generateRefreshToken, findRefreshTokenByEmailAndRemove, removeRefreshTokenByEmailAndToken, findRefreshTokenAndRemove } = require('../models/refreshToken.model');
 const bcrypt = require('bcryptjs')
 
 /**
@@ -90,8 +90,14 @@ exports.oAuth = async (req, res, next) => {
  */
 exports.refresh = async (req, res, next) => {
   try {
-    const { user, accessToken } = { user: 1212, accessToken: "sasa"};
-    const response = generateTokenResponse(user, accessToken);
+    const { email, refresh_token } = req.body;
+    const refreshObject = await findRefreshTokenAndRemove({
+      userEmail: email,
+      refreshToken: refresh_token
+    });
+
+    const { user, accessToken } = await findAndGenerateToken({ email, refreshObject });
+    const response = await this.generateTokenResponse(user, accessToken);
     return res.json(response);
   } catch (error) {
     return next(error);

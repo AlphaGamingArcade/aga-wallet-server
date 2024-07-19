@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const moment = require('moment-timezone');
 const SQLFunctions = require('../utils/sqlFunctions');
+const APIError = require('../errors/api-error');
+const httpStatus = require('http-status');
 
 exports.findRefreshTokenByEmailAndRemove = async (email) => {
     const params = {
@@ -14,6 +16,41 @@ exports.findRefreshTokenByEmailAndRemove = async (email) => {
         return { message: "Success"}
     }
     
+    throw new APIError({
+        message: 'Failed removing tokens',
+        status: httpStatus.INTERNAL_SERVER_ERROR,
+    });
+}
+
+exports.findRefreshTokenByEmailAndToken = async ({ email, token }) => {
+    let refreshToken;
+    if(email && token){
+        const params = {
+            tablename: "blockchain_token",
+            columns: ["token_id", "token_user_id", "token", "token_user_email", "token_expires"],
+            condition: `token_user_email='${email}' AND token='${token}'`
+        }
+        refreshToken = await SQLFunctions.selectQuery(params);
+    }
+    if(refreshToken.data){
+        return refreshToken.data
+    }
+    throw new APIError({
+        message: 'Invalid refresh token',
+        status: httpStatus.NOT_FOUND,
+    });
+}
+
+exports.findRefreshTokenAndRemove = async ({ userEmail, refreshToken }) => {
+    const token = await this.findRefreshTokenByEmailAndToken({ email: userEmail, token: refreshToken });
+    const params = {
+        tablename: "blockchain_token", 
+        condition: `token_user_email = '${token.token_user_email}' AND token='${token.token}'`
+    }
+    const { responseCode } = await SQLFunctions.deleteQuery(params);
+    if(responseCode == 0){
+        return { ...token }
+    }
     throw new APIError({
         message: 'Failed removing tokens',
         status: httpStatus.INTERNAL_SERVER_ERROR,

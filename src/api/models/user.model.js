@@ -80,7 +80,7 @@ exports.passwordMatches = async (password, inputPassword) => {
 exports.findAndGenerateToken = async (options) => {
     const { email, password, refreshObject } = options 
     if (!email) throw new APIError({ message: 'An email is required to generate a token' });
-    
+
     let params = {
         tablename: "blockchain_user", 
         columns: ["user_id", "user_email", "user_password", "user_name", "user_role", "user_picture"], 
@@ -99,11 +99,12 @@ exports.findAndGenerateToken = async (options) => {
             return { user: user.data, accessToken: token };
         }
         err.message = 'Incorrect email or password';
-    } else if (refreshObject && refreshObject.userEmail === email) {
+    } else if (refreshObject && refreshObject.token_user_email === email) {
         if (moment(refreshObject.expires).isBefore()) {
           err.message = 'Invalid refresh token.';
         } else {
-          return { user, accessToken: user.token() };
+          const token = this.generateAccessToken(user.data.user_id);
+          return { user: user.data, accessToken: token };
         }
     } else {
         err.message = 'Incorrect email or refreshToken';

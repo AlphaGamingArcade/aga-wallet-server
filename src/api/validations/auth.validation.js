@@ -43,7 +43,7 @@ module.exports = {
       email: Joi.string()
         .email()
         .required(),
-      refreshToken: Joi.string().required(),
+      refresh_token: Joi.string().required(),
     }),
   },
 
