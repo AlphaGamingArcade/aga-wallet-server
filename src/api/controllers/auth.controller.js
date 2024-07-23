@@ -3,7 +3,7 @@ const moment = require('moment-timezone');
 const { jwtExpirationInterval, env } = require('../../config/vars');
 const APIError = require('../errors/api-error');
 const emailProvider = require('../services/emails/emailProvider');
-const { saveUser, ROLE_USER, checkDuplicateUser, findAndGenerateToken } = require('../models/user.model');
+const { saveUser, ROLE_USER, checkDuplicateUser, findAndGenerateToken, generateAccessToken } = require('../models/user.model');
 const { generateRefreshToken, findRefreshTokenByEmailAndRemove, removeRefreshTokenByEmailAndToken, findRefreshTokenAndRemove } = require('../models/refreshToken.model');
 const bcrypt = require('bcryptjs')
 
@@ -75,10 +75,9 @@ exports.login = async (req, res, next) => {
 exports.oAuth = async (req, res, next) => {
   try {
     const { user } = req;
-    const accessToken = user.token();
-    const token = generateTokenResponse(user, accessToken);
-    const userTransformed = user.transform();
-    return res.json({ token, user: userTransformed });
+    const accessToken = await generateAccessToken(user.user_id);
+    const token = await this.generateTokenResponse(user, accessToken);
+    return res.json({ token, user });
   } catch (error) {
     return next(error);
   }
