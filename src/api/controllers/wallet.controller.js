@@ -1,6 +1,6 @@
 const httpStatus = require("http-status");
 const { saveWallet, STATUS_ACTIVE, checkDuplicateWallet, getWalletByAddress } = require("../models/wallet.model");
-const { getUserById } = require("../models/user.model");
+const { findUserById } = require("../models/user.model");
 const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
 const { getWalletBalance } = require("../services/chainprovider");
@@ -34,7 +34,7 @@ exports.get = (req, res) => res.json(req.locals.wallet);
  */
 exports.create = async (req, res, next) => {
   try {
-    const user = await getUserById(req.user.user_id);
+    const user = await findUserById(req.user.user_id);
     const keyring = new Keyring();
     const mnemonic = mnemonicGenerate();
     const pair = keyring.createFromUri(mnemonic);

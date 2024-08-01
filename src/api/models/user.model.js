@@ -4,7 +4,8 @@ const APIError = require("../errors/api-error");
 const jwt = require('jsonwebtoken');
 const moment = require('moment')
 const { jwtSecret, jwtExpirationInterval, env } = require("../../config/vars");
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs');
+const { v4 } = require("uuid");
 
 const ROLE_USER = 'u' // USER
 const ROLE_ADMIN = 'a' // ADMIN
@@ -18,7 +19,7 @@ exports.generateAccessToken = (id) => {
     return jwt.sign(payload, jwtSecret)
 }
 
-exports.getUserById = async (id) => {
+exports.findUserById = async (id) => {
     let user;
     if(id){
         const params = {
@@ -57,7 +58,6 @@ exports.saveUser = async (user) => {
         user = await SQLFunctions.selectQuery(params);
         
         if(user.data){
-            
             return { ...user.data, token }
         }
         
@@ -112,6 +112,90 @@ exports.findAndGenerateToken = async (options) => {
 
     throw new APIError(err);
 }
+
+exports.oAuthLogin = async ({
+    service, id, email, name, picture,
+  }) => {
+    const params = {
+        tablename: "blockchain_user", 
+        columns: ["user_id, user_email, user_name, user_services, user_role, user_picture"], 
+        condition: `user_email='${email}'`
+    }
+    const user = await SQLFunctions.selectQuery(params);
+
+    if (user.data) {
+      const parsedUserServices = JSON.parse(user.data.user_services) 
+      parsedUserServices[service] = id;
+      if (!user.data.user_name) user.data.user_name = name;
+      if (!user.data.user_picture) user.data.user_picture = picture;
+
+      const params = {
+        tablename: "blockchain_user",
+        newValues: [`user_name='${name}'`,`user_services='${JSON.stringify(parsedUserServices)}'`, `user_picture='${picture}'`],
+        condition: `user_email='${email}'`
+      }
+
+      const { responseCode } = await SQLFunctions.updateQuery(params);
+
+      if(responseCode == 0 ){
+        let user;
+        const params = {
+            tablename: "blockchain_user", 
+            columns: ["user_id, user_email, user_name, user_services, user_role"], 
+            condition: `user_email='${email}'`
+        }
+        user = await SQLFunctions.selectQuery(params);
+        
+        if(user.data){
+            const parsedUserServices = JSON.parse(user.data.user_services) 
+            user.data.user_services = parsedUserServices 
+            return { ...user.data }
+        }
+        
+        throw new APIError({
+            message: 'Retrieving user failed',
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+        });
+      }
+      
+      throw new APIError({
+        message: 'Updating user failed',
+        status: httpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
+
+    const password = v4();
+    const params2 = {
+        tablename: "blockchain_user",
+        columns: ["user_email, user_password, user_name, user_services, user_role, user_picture"],
+        newValues: [`'${email}'`, `'${password}'`,`'${name}'`, `'${JSON.stringify({[service]: id})}'`,`'${ROLE_USER}'`, `'${picture}'`]
+    }
+    const { responseCode } = await SQLFunctions.insertQuery(params2);
+        
+    if(responseCode == 0){
+        let user;
+        const params = {
+            tablename: "blockchain_user", 
+            columns: ["user_id, user_email, user_name, user_services, user_role"], 
+            condition: `user_email='${email}'`
+        }
+        user = await SQLFunctions.selectQuery(params);
+        
+        if(user.data){
+            return { ...user.data }
+        }
+        
+        throw new APIError({
+            message: 'Retrieving user failed',
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+        });
+    }
+
+    throw new APIError({
+        message: 'Creating transaction failed',
+        status: httpStatus.INTERNAL_SERVER_ERROR,
+    });
+  },
 
 exports.checkDuplicateUser = (error) =>{
     if (error.message.includes('Violation of UNIQUE KEY constraint')) {

@@ -1,6 +1,6 @@
 const httpStatus = require('http-status');
 const { omit } = require('lodash');
-const { getUserById } = require('../models/user.model');
+const { findUserById } = require('../models/user.model');
 
 /**
  * Load user and append to req.
@@ -8,7 +8,7 @@ const { getUserById } = require('../models/user.model');
  */
 exports.load = async (req, res, next, id) => {
   try {
-    const user = await getUserById(id);
+    const user = await findUserById(id);
     req.locals = { user };
     return next();
   } catch (error) {
