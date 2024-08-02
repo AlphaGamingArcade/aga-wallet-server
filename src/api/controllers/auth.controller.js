@@ -5,7 +5,7 @@ const APIError = require('../errors/api-error');
 const emailProvider = require('../services/emails/emailProvider');
 const { saveUser, ROLE_USER, checkDuplicateUser, findAndGenerateToken, generateAccessToken, findUserById, findUserByEmail } = require('../models/user.model');
 const { generateRefreshToken, findRefreshTokenByEmailAndRemove, removeRefreshTokenByEmailAndToken, findRefreshTokenAndRemove } = require('../models/refreshToken.model');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs') ;
 const { generatePasswordResetToken } = require('../models/passwordResetToken.model');
 
 /**
