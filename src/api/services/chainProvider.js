@@ -1,7 +1,6 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { Keyring } = require('@polkadot/keyring');
 const { provider } = require('../../config/vars');
-const { STATUS_PENDING } = require('../models/transaction.model');
 const httpStatus = require('http-status');
 const APIError = require('../errors/api-error');
 const BigNumber = require('bignumber.js');
@@ -21,7 +20,7 @@ exports.transferAsset = async (transferAssetObject) => {
    try {
     const { senderMnemonic, recipientAddress, amount } = transferAssetObject;
     const wsProvider = new WsProvider(provider);
-    const api = await ApiPromise.create({ provider: wsProvider });
+    const api = await ApiPromise.create({ provider: wsProvider })
     const keyring = new Keyring({ type: 'sr25519' });
     const sender = keyring.addFromMnemonic(senderMnemonic);
     const { nonce } = await api.query.system.account(sender.address);

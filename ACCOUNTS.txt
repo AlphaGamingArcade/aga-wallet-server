@@ -1,3 +1,5 @@
+ ./resources/aga-chain-spec-raw.json 
+
 ACCOUNT 1
 Password: 1234
 AURA
@@ -41,3 +43,7 @@ Public key (SS58): 5GJC2iSZ6Ax3n4T1ZWzFHi2eqdxF7ptCLRFEstr7V6FKjyi7
 SS58 Address:      5GJC2iSZ6Ax3n4T1ZWzFHi2eqdxF7ptCLRFEstr7V6FKjyi7
 
 
+
+
+BUILD CHAIN SPEC TO RAW
+./target/release/node-template build-spec --chain=./resources/aga-chain-spec.json --raw --disable-default-bootnode > ./resources/aga-chain-spec-raw.json

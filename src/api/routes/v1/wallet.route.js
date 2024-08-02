@@ -2,7 +2,7 @@ const express = require('express');
 const { validate } = require('express-validation');
 const controller = require('../../controllers/wallet.controller');
 const { getWallet, createWallet } = require('../../validations/wallet.validation');
-const { authorize, LOGGED_USER } = require('../../middlewares/auth');
+const { authorize } = require('../../middlewares/auth');
 
 const router = express.Router();
 

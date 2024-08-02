@@ -41,3 +41,11 @@ CREATE TABLE blockchain_token(
     token_user_email VARCHAR(258) NOT NULL,
     token_expires DATETIME
 )
+
+CREATE TABLE blockchain_password_reset_token(
+    password_reset_token_id INT IDENTITY(1, 1) PRIMARY KEY,
+    password_reset_token VARCHAR(258) NOT NULL,
+    password_reset_token_user_id INT NOT NULL,
+    password_reset_token_user_email VARCHAR(258) NOT NULL,
+    password_reset_token_expires DATETIME 
+)

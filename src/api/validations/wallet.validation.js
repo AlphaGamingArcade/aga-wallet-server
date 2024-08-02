@@ -1,11 +1,15 @@
 const Joi = require('joi');
 
 module.exports = {
-  // GET /v1/wallets
+  // GET /v1/wallet
   getWallet: {
     params: Joi.object({
         wallet_address: Joi.string().required(),
     }),
+  },
+  // GET /v1/wallets
+  getWallets: {
+  
   },
   // POST /v1/wallets
   createWallet:{

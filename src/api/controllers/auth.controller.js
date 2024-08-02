@@ -3,9 +3,10 @@ const moment = require('moment-timezone');
 const { jwtExpirationInterval, env } = require('../../config/vars');
 const APIError = require('../errors/api-error');
 const emailProvider = require('../services/emails/emailProvider');
-const { saveUser, ROLE_USER, checkDuplicateUser, findAndGenerateToken, generateAccessToken } = require('../models/user.model');
+const { saveUser, ROLE_USER, checkDuplicateUser, findAndGenerateToken, generateAccessToken, findUserById, findUserByEmail } = require('../models/user.model');
 const { generateRefreshToken, findRefreshTokenByEmailAndRemove, removeRefreshTokenByEmailAndToken, findRefreshTokenAndRemove } = require('../models/refreshToken.model');
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs');
+const { generatePasswordResetToken } = require('../models/passwordResetToken.model');
 
 /**
  * Returns a formated object with tokens
@@ -106,10 +107,9 @@ exports.refresh = async (req, res, next) => {
 exports.sendPasswordReset = async (req, res, next) => {
   try {
     const { email } = req.body;
-    const user = {};
-
+    const user = await findUserByEmail(email);
     if (user) {
-      const passwordResetObj = {};
+      const passwordResetObj = await generatePasswordResetToken(user);
       emailProvider.sendPasswordReset(passwordResetObj);
       res.status(httpStatus.OK);
       return res.json('success');

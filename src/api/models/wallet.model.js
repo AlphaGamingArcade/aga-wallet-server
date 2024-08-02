@@ -97,5 +97,34 @@ exports.checkDuplicateWallet = (error) =>{
     return error;
 }
 
+exports.getWalletsByUserId = async (options) => {
+    const { userId } = options;
+    let wallets;
+    if(userId){
+        const params = {
+            tablename: "blockchain_wallet", 
+            columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_address"], 
+            condition: `wallet_user_id='${userId}'`
+        }
+        wallets = await SQLFunctions.selectQueryMultiple(params);
+    }
+
+    const err = {
+        status: httpStatus.UNAUTHORIZED,
+        isPublic: true
+    };
+
+    if(wallets.data){
+        if(wallets.data.length > 0){
+            return wallets.data
+        }
+        err.message = 'Error retrieving user wallets';
+    } else {
+        err.message =  "No wallet found"
+    }
+
+    throw new APIError(err);
+}
+
 exports.STATUS_ACTIVE = STATUS_ACTIVE;
 exports.STATUS_SUSPENDED = STATUS_SUSPENDED;

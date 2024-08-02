@@ -38,6 +38,26 @@ exports.findUserById = async (id) => {
     });
 }
 
+exports.findUserByEmail = async (email) => {
+    let user;
+    if(email){
+        const params = {
+            tablename: "blockchain_user", 
+            columns: ["user_id, user_email, user_name, user_services, user_role, user_picture"], 
+            condition: `user_email='${email}'`
+        }
+        user = await SQLFunctions.selectQuery(params);
+    }
+    if(user.data){
+        return user.data
+    }
+    throw new APIError({
+        message: 'User does not exist',
+        status: httpStatus.NOT_FOUND,
+    });
+}
+
+
 exports.saveUser = async (user) => {
     let { email, password, name, services, role, picture } = user;
 

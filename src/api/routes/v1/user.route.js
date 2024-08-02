@@ -25,6 +25,11 @@ router
   .route('/profile')
   .get(authorize(), controller.loggedIn);
 
+
+router
+  .route('/:user_id/wallets')
+  .get(authorize(), controller.wallets);
+
 router
   .route('/:user_id')
   .get(authorize(LOGGED_USER), controller.get)

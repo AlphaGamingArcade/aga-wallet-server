@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const { omit } = require('lodash');
 const { findUserById } = require('../models/user.model');
+const { getWalletsByUserId } = require('../models/wallet.model');
 
 /**
  * Load user and append to req.
@@ -102,3 +103,13 @@ exports.remove = (req, res, next) => {
     .then(() => res.status(httpStatus.NO_CONTENT).end())
     .catch((e) => next(e));
 };
+
+/** 
+ * Get user wallets in list
+ */
+exports.wallets = async (req, res, next) => {
+  const { user } = req.locals;
+  const userWallets = await getWalletsByUserId({ userId: user.user_id});
+  res.status(httpStatus.OK);
+  return res.json(userWallets);
+}
