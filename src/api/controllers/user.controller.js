@@ -108,8 +108,12 @@ exports.remove = (req, res, next) => {
  * Get user wallets in list
  */
 exports.wallets = async (req, res, next) => {
-  const { user } = req.locals;
-  const userWallets = await getWalletsByUserId({ userId: user.user_id});
-  res.status(httpStatus.OK);
-  return res.json(userWallets);
+  try {
+    const { user } = req.locals;
+    const userWallets = await getWalletsByUserId({ userId: user.user_id});
+    res.status(httpStatus.OK);
+    return res.json(userWallets);
+  } catch (error) {
+    next(error);
+  }
 }
