@@ -5,6 +5,9 @@ const httpStatus = require('http-status');
 const APIError = require('../errors/api-error');
 const BigNumber = require('bignumber.js');
 
+
+exports.wsProvider = new WsProvider(provider);
+
 exports.convertToPlanks = (amountPerUnit) => {
     const plancksPerUnit = 1000000000000;
     return amountPerUnit * plancksPerUnit;
@@ -19,8 +22,7 @@ exports.convertPlanckToDecimal = (amountInPlanck) => {
 exports.transferAsset = async (transferAssetObject) => {
    try {
     const { senderMnemonic, recipientAddress, amount } = transferAssetObject;
-    const wsProvider = new WsProvider(provider);
-    const api = await ApiPromise.create({ provider: wsProvider })
+    const api = await ApiPromise.create({ provider: this.wsProvider })
     const keyring = new Keyring({ type: 'sr25519' });
     const sender = keyring.addFromMnemonic(senderMnemonic);
     const { nonce } = await api.query.system.account(sender.address);
@@ -49,8 +51,7 @@ exports.transferAsset = async (transferAssetObject) => {
 
 exports.getTransactionDetails = async (txHash) => {
     try {
-      const wsProvider = new WsProvider(provider);
-      const api = await ApiPromise.create({ provider: wsProvider });
+      const api = await ApiPromise.create({ provider: this.wsProvider });
       // returns SignedBlock
       const signedBlock = await api.rpc.chain.getBlock(txHash);
       await api.disconnect();
@@ -65,8 +66,7 @@ exports.getTransactionDetails = async (txHash) => {
 
 exports.getBlockByHash = async (blockHash) => {
     try {
-        const wsProvider = new WsProvider(provider);
-        const api = await ApiPromise.create({ provider: wsProvider });
+        const api = await ApiPromise.create({ provider: this.wsProvider });
         // returns SignedBlock
         const signedBlock = await api.rpc.chain.getBlock(blockHash);
         await api.disconnect();
@@ -82,20 +82,19 @@ exports.getBlockByHash = async (blockHash) => {
 
 exports.getWalletBalance = async (address) => {
     try {
-        const wsProvider = new WsProvider(provider);
-        const api = await ApiPromise.create({ provider: wsProvider });
+        const api = await ApiPromise.create({ provider: this.wsProvider });
         const now = await api.query.timestamp.now();
         const { nonce, data: balance } = await api.query.system.account(address);
         await api.disconnect();
-
         const readableBalance = {
+            tokenSymbol: "AGA",
             free: this.convertPlanckToDecimal(Number(new BigNumber(balance.free))),
             reserved: this.convertPlanckToDecimal(Number(new BigNumber(balance.reserved))),
             miscFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
             feeFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
         };
       
-        return { nonce: Number(new BigNumber(nonce)), balance: readableBalance, timestamp: Number(new BigNumber(now)) }
+        return { nonce: Number(new BigNumber(nonce)), balance: readableBalance, timestamp: now.toJSON() }
     } catch (error) {
         throw new APIError({
             status: httpStatus.BAD_REQUEST,

@@ -1,7 +1,7 @@
 const httpStatus = require("http-status");
 const { checkDuplicateTransaction } = require("../models/transaction.model");
 const { transferAsset, convertToPlanks, getTransactionDetails } = require("../services/chainprovider");
-const { getUserWallet } = require("../models/wallet.model") 
+const { getUserWallet, getWalletMnemonic } = require("../models/wallet.model") 
 
 /**
  * Load wallet and append to req.locals.
@@ -29,13 +29,10 @@ exports.get = (req, res) => res.json(req.locals.wallet);
  */
 exports.send = async (req, res, next) => {
   try {
-    const walletData = {
-      senderAddress: req.body.sender_address,
-      password: req.body.password,
-      userId: req.user.user_id 
-    }
-    const wallet = await getUserWallet(walletData);
-    const senderMnemonic = "champion label silly fortune response more post catch great profit city moment";
+    const senderMnemonic = await getWalletMnemonic({
+      walletAddress: req.body.sender_address,
+      walletPassword: req.body.password,
+    });
     const recipientAddress = req.body.recipient_address;
     const transferAmount = convertToPlanks(req.body.amount);
     const transaction = await transferAsset({

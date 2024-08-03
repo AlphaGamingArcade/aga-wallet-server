@@ -45,7 +45,6 @@ exports.register = async (req, res, next) => {
     };
   
     const user = await saveUser(userData);
-    console.log("USER",user)
     const token = await this.generateTokenResponse(user, user.token);
     res.status(httpStatus.CREATED);
     return res.json({ token, user });

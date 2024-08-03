@@ -2,6 +2,7 @@ const httpStatus = require("http-status");
 const APIError = require("../errors/api-error");
 const SQLFunctions = require("../utils/sqlFunctions")
 const bcrypt = require('bcryptjs');
+const { passwordMatches } = require("./user.model");
 
 const STATUS_ACTIVE = 'a'
 const STATUS_SUSPENDED = 's'
@@ -38,7 +39,7 @@ exports.getUserWallet = async (options) => {
     if(userId){
         const params = {
             tablename: "blockchain_wallet", 
-            columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_address", "wallet_password"], 
+            columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias","wallet_status", "wallet_address", "wallet_password"], 
             condition: `wallet_user_id='${userId}' AND wallet_address='${senderAddress}'`
         }
         wallet = await SQLFunctions.selectQuery(params);
@@ -56,6 +57,36 @@ exports.getUserWallet = async (options) => {
         err.message = 'Incorrect wallet password';
     } else {
         err.message =  "Wallet not found"
+    }
+
+    throw new APIError(err);
+}
+
+exports.getWalletMnemonic = async (options) => {
+    const { walletAddress, walletPassword } = options;
+    
+    let wallet;
+    if(walletAddress){
+        const params = {
+            tablename: "blockchain_wallet", 
+            columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias","wallet_status","wallet_mnemonic", "wallet_address", "wallet_password"], 
+            condition: `wallet_address='${walletAddress}'`
+        }
+        wallet = await SQLFunctions.selectQuery(params);
+    }
+
+    const err = {
+        status: httpStatus.INTERNAL_SERVER_ERROR,
+    }
+
+    if(wallet.data){
+       if(passwordMatches(wallet.data.wallet_password, walletPassword)){
+          return wallet.data.wallet_mnemonic
+       }
+       err.status = httpStatus.UNAUTHORIZED
+       err.message = "Incorrect wallet password."
+    } else {
+        err.message =  "Error retrieving wallet by address"
     }
 
     throw new APIError(err);
