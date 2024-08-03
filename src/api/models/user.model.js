@@ -78,6 +78,8 @@ exports.saveUser = async (user) => {
         user = await SQLFunctions.selectQuery(params);
         
         if(user.data){
+            delete user.data.user_password;
+            const token = this.generateAccessToken(user.data.user_id);
             return { ...user.data, token }
         }
         

@@ -1,7 +1,7 @@
 const httpStatus = require("http-status");
 const APIError = require("../errors/api-error");
 const SQLFunctions = require("../utils/sqlFunctions")
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs');
 
 const STATUS_ACTIVE = 'a'
 const STATUS_SUSPENDED = 's'
@@ -110,7 +110,7 @@ exports.getWalletsByUserId = async (options) => {
     }
 
     const err = {
-        status: httpStatus.UNAUTHORIZED,
+        status: httpStatus.INTERNAL_SERVER_ERROR,
         isPublic: true
     };
 
@@ -118,9 +118,10 @@ exports.getWalletsByUserId = async (options) => {
         if(wallets.data.length > 0){
             return wallets.data
         }
-        err.message = 'Error retrieving user wallets';
+        err.status = httpStatus.NOT_FOUND
+        err.message = 'No wallet found';
     } else {
-        err.message =  "No wallet found"
+        err.message =  "Error retrieving user wallets"
     }
 
     throw new APIError(err);
