@@ -110,8 +110,7 @@ exports.getWalletsBalance = async (addresses) => {
         });
 
         const addressData = await balancesPromise;
-        console.log("HEYY")
-        // Disconnect the API to clean up
+
         await api.disconnect();
 
         return addressData;
