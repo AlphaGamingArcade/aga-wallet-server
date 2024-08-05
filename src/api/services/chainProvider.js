@@ -5,9 +5,6 @@ const httpStatus = require('http-status');
 const APIError = require('../errors/api-error');
 const BigNumber = require('bignumber.js');
 
-
-exports.wsProvider = new WsProvider(provider);
-
 exports.convertToPlanks = (amountPerUnit) => {
     const plancksPerUnit = 1000000000000;
     return amountPerUnit * plancksPerUnit;
@@ -21,8 +18,9 @@ exports.convertPlanckToDecimal = (amountInPlanck) => {
 
 exports.transferAsset = async (transferAssetObject) => {
    try {
+    const wsProvider = new WsProvider(provider)
     const { senderMnemonic, recipientAddress, amount } = transferAssetObject;
-    const api = await ApiPromise.create({ provider: this.wsProvider })
+    const api = await ApiPromise.create({ provider: wsProvider })
     const keyring = new Keyring({ type: 'sr25519' });
     const sender = keyring.addFromMnemonic(senderMnemonic);
     const { nonce } = await api.query.system.account(sender.address);
@@ -51,7 +49,8 @@ exports.transferAsset = async (transferAssetObject) => {
 
 exports.getTransactionDetails = async (txHash) => {
     try {
-      const api = await ApiPromise.create({ provider: this.wsProvider });
+      const wsProvider = new WsProvider(provider)
+      const api = await ApiPromise.create({ provider: wsProvider });
       // returns SignedBlock
       const signedBlock = await api.rpc.chain.getBlock(txHash);
       await api.disconnect();
@@ -66,7 +65,8 @@ exports.getTransactionDetails = async (txHash) => {
 
 exports.getBlockByHash = async (blockHash) => {
     try {
-        const api = await ApiPromise.create({ provider: this.wsProvider });
+        const wsProvider = new WsProvider(provider)
+        const api = await ApiPromise.create({ provider: wsProvider });
         // returns SignedBlock
         const signedBlock = await api.rpc.chain.getBlock(blockHash);
         await api.disconnect();
@@ -80,21 +80,41 @@ exports.getBlockByHash = async (blockHash) => {
     }
 }
 
-exports.getWalletBalance = async (address) => {
+exports.getWalletsBalance = async (addresses) => {
     try {
-        const api = await ApiPromise.create({ provider: this.wsProvider });
-        const now = await api.query.timestamp.now();
-        const { nonce, data: balance } = await api.query.system.account(address);
+        const wsProvider = new WsProvider(provider)
+        const api = await ApiPromise.create({ provider: wsProvider });
+        const balancesPromise = new Promise((resolve, reject) => {
+            api.query.system.account.multi([...addresses], (balances) => {
+                try {
+                    const addressData = balances.map(({ data }) => {
+                        const balance = data.toJSON();
+                        const readableBalance = {
+                            free: this.convertPlanckToDecimal(Number(new BigNumber(balance.free))),
+                            reserved: this.convertPlanckToDecimal(Number(new BigNumber(balance.reserved))),
+                            miscFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
+                            feeFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
+                        };
+                        return {
+                            tokenSymbol: "AGA",
+                            ...readableBalance
+                        }
+                    });
+                    resolve(addressData);
+                } catch (error) {
+                    reject(error);
+                }
+            }).then(unsub => {
+                unsub();
+            }).catch(reject);
+        });
+
+        const addressData = await balancesPromise;
+        console.log("HEYY")
+        // Disconnect the API to clean up
         await api.disconnect();
-        const readableBalance = {
-            tokenSymbol: "AGA",
-            free: this.convertPlanckToDecimal(Number(new BigNumber(balance.free))),
-            reserved: this.convertPlanckToDecimal(Number(new BigNumber(balance.reserved))),
-            miscFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
-            feeFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
-        };
-      
-        return { nonce: Number(new BigNumber(nonce)), balance: readableBalance, timestamp: now.toJSON() }
+
+        return addressData;
     } catch (error) {
         throw new APIError({
             status: httpStatus.BAD_REQUEST,

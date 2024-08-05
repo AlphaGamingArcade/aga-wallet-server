@@ -2,6 +2,7 @@ const httpStatus = require('http-status');
 const { omit } = require('lodash');
 const { findUserById } = require('../models/user.model');
 const { getWalletsByUserId } = require('../models/wallet.model');
+const { getWalletsBalance } = require('../services/chainProvider');
 
 /**
  * Load user and append to req.
@@ -110,9 +111,11 @@ exports.remove = (req, res, next) => {
 exports.wallets = async (req, res, next) => {
   try {
     const { user } = req.locals;
-    const userWallets = await getWalletsByUserId({ userId: user.user_id});
+    const wallets = await getWalletsByUserId({ userId: user.user_id});
+    const walletsAddrs = wallets.map(wallet => wallet.wallet_address)
+    const walletsData = await getWalletsBalance(walletsAddrs);
     res.status(httpStatus.OK);
-    return res.json(userWallets);
+    return res.json(walletsData);
   } catch (error) {
     next(error);
   }
