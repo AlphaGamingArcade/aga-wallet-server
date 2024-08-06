@@ -7,6 +7,12 @@ module.exports = {
       transaction_hash: Joi.string().required()
     })
   },
+  // GET /v1/transaction/:transaction_hash
+  getTransaction: {
+      body: Joi.object({
+        transaction_hash: Joi.string().required()
+      })
+  },
   // POSST /v1/transaction/send
   sendTransaction: {
     body: Joi.object({

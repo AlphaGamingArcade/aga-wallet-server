@@ -7,6 +7,12 @@ module.exports = {
         wallet_address: Joi.string().required(),
     }),
   },
+  // GET /v1/wallet
+  getWalletTransactions: {
+    params: Joi.object({
+        wallet_address: Joi.string().required()
+    }),
+    },
   // GET /v1/wallets
   getWallets: {
   

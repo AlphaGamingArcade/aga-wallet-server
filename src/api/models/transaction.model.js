@@ -8,7 +8,6 @@ const STATUS_SUCCESS = 's'
 
 exports.getTransactionById = async (id) => {
     let transaction;
-
     if(id){
         const params = {
             tablename: "blockchain_transaction", 
@@ -29,11 +28,11 @@ exports.getTransactionById = async (id) => {
 }
 
 exports.saveTransaction = async (transaction) => {
-    const { senderAddress, recipientAddress, amount, status, hash } = transaction;
+    const { senderAddress, recipientAddress, amount, status, txHash, blockHash } = transaction;
     const params = {
         tablename: "blockchain_transaction",
-        columns: ["tx_wallet_sender_address, tx_wallet_recipient_address, tx_amount, tx_hash, tx_status"],
-        newValues: [`'${senderAddress}'`, `'${recipientAddress}'`, amount, `'${hash}'`,`'${status}'`]
+        columns: ["tx_wallet_sender_address, tx_wallet_recipient_address, tx_amount, tx_hash, tx_block_hash, tx_status"],
+        newValues: [`'${senderAddress}'`, `'${recipientAddress}'`, amount, `'${txHash}'`, `'${blockHash}'`, `'${status}'`]
     }
     const { responseCode } = await SQLFunctions.insertQuery(params);
     
@@ -43,7 +42,8 @@ exports.saveTransaction = async (transaction) => {
             recipientAddress, 
             amount,
             status,
-            hash
+            txHash,
+            blockHash
         }
     }
 
@@ -51,6 +51,51 @@ exports.saveTransaction = async (transaction) => {
         message: 'Creating transaction failed',
         status: httpStatus.INTERNAL_SERVER_ERROR,
     });
+}
+
+exports.getTransactionsBySenderAddr = async (options) => {
+    const { address, limit, offset, orderBy = "tx_id" } = options;
+    let transactions, totalCount;
+    const err = { message: 'Error retrieving transactions' }
+    if(address){
+        const countParams = {
+            tablename: "blockchain_transaction", 
+            columns: ["COUNT(*) AS total"], 
+            condition: `tx_wallet_sender_address='${address}'`
+        };
+
+        const params = {
+            tablename: "blockchain_transaction", 
+            columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_hash", "tx_block_hash", "tx_created_at", "tx_updated_at"], 
+            condition: `tx_wallet_sender_address='${address}'`,
+            limit, 
+            offset, 
+            orderBy
+        }
+
+        const result = await Promise.all([
+            SQLFunctions.selectQuery(countParams),
+            SQLFunctions.selectQueryMultiple(params)
+        ])
+
+        totalCount = result[0]
+        transactions = result[1]
+    }
+
+    if(transactions.data && totalCount.data){
+        if(transactions.data.length > 0){
+            return {
+                transactions: transactions.data,
+                metadata: { count: totalCount.data.total }
+            }
+        }
+        err.message = "No transactions found"
+        err.status = httpStatus.NOT_FOUND
+    } else {
+        err.httpStatus = httpStatus.BAD_REQUEST
+    }
+
+    throw new APIError(err);
 }
 
 exports.checkDuplicateTransaction = (error) =>{
@@ -63,6 +108,19 @@ exports.checkDuplicateTransaction = (error) =>{
     }
     return error;
 }
+
+exports.checkBalanceNotEnoughTransaction = (error) =>{
+    if (error.message.includes('{\"arithmetic\":\"Underflow\"')) {
+        return new APIError({
+            message: 'Balance not enough',
+            status: httpStatus.BAD_REQUEST,
+            isPublic: true
+          });
+    }
+    return error;
+}
+
+exports.getWallet
 
 exports.STATUS_PENDING = STATUS_PENDING
 exports.STATUS_FAILED = STATUS_FAILED

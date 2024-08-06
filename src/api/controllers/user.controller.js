@@ -3,6 +3,7 @@ const { omit } = require('lodash');
 const { findUserById } = require('../models/user.model');
 const { getWalletsByUserId } = require('../models/wallet.model');
 const { getWalletsBalance } = require('../services/chainProvider');
+const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require('../utils/constants')
 
 /**
  * Load user and append to req.
@@ -111,11 +112,15 @@ exports.remove = (req, res, next) => {
 exports.wallets = async (req, res, next) => {
   try {
     const { user } = req.locals;
-    const wallets = await getWalletsByUserId({ userId: user.user_id});
-    const walletsAddrs = wallets.map(wallet => wallet.wallet_address)
+    const result = await getWalletsByUserId({ 
+      userId: user.user_id,
+      limit: req.query.limit || DEFAULT_QUERY_LIMIT,
+      offset: req.query.offset || DEFAULT_QUERY_OFFSET
+    });
+    const walletsAddrs = result.wallets.map(wallet => wallet.wallet_address)
     const walletsData = await getWalletsBalance(walletsAddrs);
     res.status(httpStatus.OK);
-    return res.json(walletsData);
+    return res.json({ wallets: walletsData, metadata: result.metadata });
   } catch (error) {
     next(error);
   }

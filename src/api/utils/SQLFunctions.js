@@ -33,8 +33,8 @@ module.exports = class SQLFunctions {
     static async selectQueryMultiple(params) {
       const db = await connectDb();
       try {
-        const { tablename, columns, condition } = params;
-        const query = `SELECT ${columns.join(', ')} FROM ${tablename} WHERE ${condition}`;
+        const { tablename, columns, condition, limit, offset, orderBy } = params;
+        const query = `SELECT ${columns.join(', ')} FROM ${tablename} WHERE ${condition} order by ${orderBy} offset ${offset} rows fetch next ${limit} rows only`;
         const result = await db.request().query(query);
         return { data: result.recordset };
       } catch (error) {

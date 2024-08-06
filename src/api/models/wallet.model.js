@@ -129,15 +129,31 @@ exports.checkDuplicateWallet = (error) =>{
 }
 
 exports.getWalletsByUserId = async (options) => {
-    const { userId } = options;
-    let wallets;
+    const { userId, limit, offset, orderBy = "wallet_id" } = options;
+    let wallets, totalCount;
     if(userId){
+        const countParams = {
+            tablename: "blockchain_wallet", 
+            columns: ["COUNT(*) AS total"], 
+            condition: `wallet_user_id=${userId}`
+        };
+
         const params = {
             tablename: "blockchain_wallet", 
             columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_address"], 
-            condition: `wallet_user_id='${userId}'`
+            condition: `wallet_user_id=${userId}`,
+            limit,
+            offset,
+            orderBy
         }
-        wallets = await SQLFunctions.selectQueryMultiple(params);
+    
+        const result = await Promise.all([
+            SQLFunctions.selectQuery(countParams),
+            SQLFunctions.selectQueryMultiple(params)
+        ])
+
+        totalCount = result[0]
+        wallets = result[1]
     }
 
     const err = {
@@ -145,12 +161,17 @@ exports.getWalletsByUserId = async (options) => {
         isPublic: true
     };
 
-    if(wallets.data){
+    if(wallets.data && totalCount.data){
         if(wallets.data.length > 0){
-            return wallets.data
+            return {
+                wallets: wallets.data,
+                metadata: {
+                    count: totalCount.data.total
+                }
+            }
         }
         err.status = httpStatus.NOT_FOUND
-        err.message = 'No wallet found';
+        err.message = 'No wallets found';
     } else {
         err.message =  "Error retrieving user wallets"
     }

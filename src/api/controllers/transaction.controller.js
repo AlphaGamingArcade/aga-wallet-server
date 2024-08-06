@@ -1,7 +1,7 @@
 const httpStatus = require("http-status");
-const { checkDuplicateTransaction } = require("../models/transaction.model");
-const { transferAsset, convertToPlanks, getTransactionDetails } = require("../services/chainprovider");
-const { getUserWallet, getWalletMnemonic } = require("../models/wallet.model") 
+const { checkDuplicateTransaction, saveTransaction } = require("../models/transaction.model");
+const { transferAsset, convertToPlanks, getTransactionDetails } = require("../services/chainProvider");
+const { getWalletMnemonic } = require("../models/wallet.model") 
 
 /**
  * Load wallet and append to req.locals.
@@ -40,6 +40,16 @@ exports.send = async (req, res, next) => {
       recipientAddress, 
       amount: transferAmount
     });
+    
+    await saveTransaction({
+      senderAddress: req.body.sender_address,
+      recipientAddress: recipientAddress,
+      amount: req.body.amount,
+      status: transaction.success ? "s" : "f",
+      blockHash: transaction.block_hash,
+      txHash: transaction.transaction_hash
+    });
+
     res.status(httpStatus.CREATED);
     return res.json(transaction);   
   } catch (error) {

@@ -3,9 +3,10 @@ const { saveWallet, STATUS_ACTIVE, checkDuplicateWallet, getWalletByAddress } = 
 const { findUserById } = require("../models/user.model");
 const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
-const { getWalletBalance } = require("../services/chainprovider");
 const { env } = require("../../config/vars");
-const bcrypt = require("bcryptjs")
+const bcrypt = require("bcryptjs");
+const { getWalletBalance } = require("../services/chainProvider");
+const { getTransactionsBySenderAddr } = require("../models/transaction.model");
 
 /**
  * Load wallet and append to req.locals.
@@ -60,4 +61,21 @@ exports.create = async (req, res, next) => {
     return next(checkDuplicateWallet(error));
   }
 }
-  
+
+/**
+ * Get wallet transactions
+ */
+exports.getTransactions = async (req, res, next) => {
+  try {
+    const { wallet } = req.locals;
+    const transactions =  await getTransactionsBySenderAddr({ 
+      address: wallet.wallet_address,
+      limit: req.query.limit || DEFAULT_QUERY_LIMIT,
+      offset: req.query.offset || DEFAULT_QUERY_OFFSET
+    });
+    res.status(httpStatus.OK);
+    return res.json(transactions)
+  } catch (error) {
+    return next(error)
+  }
+}

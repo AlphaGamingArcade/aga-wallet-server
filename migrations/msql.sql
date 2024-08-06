@@ -27,9 +27,10 @@ CREATE TABLE blockchain_transaction(
     tx_id INT IDENTITY(1, 1) PRIMARY KEY,
     tx_wallet_sender_address VARCHAR(256) NOT NULL,
     tx_wallet_recipient_address VARCHAR(256) NOT NULL,
-    tx_amount DECIMAL(100, 4) NOT NULL,
+    tx_amount DECIMAL(38, 4) NOT NULL,
     tx_status CHAR(1) NOT NULL,
     tx_hash VARCHAR(256) NOT NULL,
+    tx_block_hash VARCHAR(256) NOT NULL,
     tx_created_at DATETIME DEFAULT GETDATE(),
     tx_updated_at DATETIME DEFAULT GETDATE()
 )
@@ -48,4 +49,14 @@ CREATE TABLE blockchain_password_reset_token(
     password_reset_token_user_id INT NOT NULL,
     password_reset_token_user_email VARCHAR(258) NOT NULL,
     password_reset_token_expires DATETIME 
+)
+
+create table blockchain_log(
+	log_id int IDENTITY(1, 1) PRIMARY KEY NOT NULL,
+	log_text varchar(250),
+	log_url varchar(250),
+    log_status char(1),
+    log_ip varchar(39),
+    log_created_at DATETIME DEFAULT GETDATE(),
+    log_updated_at DATETIME DEFAULT GETDATE()
 )
