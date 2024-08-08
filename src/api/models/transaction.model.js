@@ -30,11 +30,14 @@ exports.getTransactionById = async (id) => {
 exports.saveTransaction = async (transaction) => {
     const { senderAddress, recipientAddress, amount, status, txHash, blockHash } = transaction;
     const params = {
-        tablename: "blockchain_transaction",
-        columns: ["tx_wallet_sender_address, tx_wallet_recipient_address, tx_amount, tx_hash, tx_block_hash, tx_status"],
-        newValues: [`'${senderAddress}'`, `'${recipientAddress}'`, amount, `'${txHash}'`, `'${blockHash}'`, `'${status}'`]
-    }
-    const { responseCode } = await SQLFunctions.insertQuery(params);
+        tablename: 'blockchain_transaction',
+        columns: ['tx_wallet_sender_address', 'tx_wallet_recipient_address', 'tx_amount', 'tx_hash', 'tx_type', 'tx_block_hash', 'tx_status'],
+        multipleValues: [
+          [`'${senderAddress}'`, `'${recipientAddress}'`, amount, `'${txHash}'`,`'t'`, `'${blockHash}'`, `'${status}'`], // TRANSFER
+          [`'${recipientAddress}'`, `'${senderAddress}'`, amount, `'${txHash}'`,`'r'`, `'${blockHash}'`, `'${status}'`] // RECEIVE
+        ]
+    };
+    const { responseCode } = await SQLFunctions.insertQueryMultiple(params);
     
     if(responseCode == 0){
         return {
@@ -66,7 +69,7 @@ exports.getTransactionsBySenderAddr = async (options) => {
 
         const params = {
             tablename: "blockchain_transaction", 
-            columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_hash", "tx_block_hash", "tx_created_at", "tx_updated_at"], 
+            columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_hash", "tx_type", "tx_block_hash", "tx_created_at", "tx_updated_at"], 
             condition: `tx_wallet_sender_address='${address}'`,
             limit, 
             offset, 

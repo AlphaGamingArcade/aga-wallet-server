@@ -33,10 +33,12 @@ exports.send = async (req, res, next) => {
       walletAddress: req.body.sender_address,
       walletPassword: req.body.password,
     });
+    const senderAddress = req.body.sender_address;
     const recipientAddress = req.body.recipient_address;
     const transferAmount = convertToPlanks(req.body.amount);
     const transaction = await transferAsset({
       senderMnemonic, 
+      senderAddress,
       recipientAddress, 
       amount: transferAmount
     });

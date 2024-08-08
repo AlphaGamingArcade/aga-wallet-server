@@ -5,8 +5,9 @@ const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
 const { env } = require("../../config/vars");
 const bcrypt = require("bcryptjs");
-const { getWalletBalance } = require("../services/chainProvider");
+const { getWalletBalance, getTransactions } = require("../services/chainProvider");
 const { getTransactionsBySenderAddr } = require("../models/transaction.model");
+const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require("../utils/constants");
 
 /**
  * Load wallet and append to req.locals.
@@ -36,7 +37,7 @@ exports.get = (req, res) => res.json(req.locals.wallet);
 exports.create = async (req, res, next) => {
   try {
     const user = await findUserById(req.user.user_id);
-    const keyring = new Keyring();
+    const keyring = new Keyring({ type: 'sr25519' });
     const mnemonic = mnemonicGenerate();
     const pair = keyring.createFromUri(mnemonic);
 
@@ -68,6 +69,10 @@ exports.create = async (req, res, next) => {
 exports.getTransactions = async (req, res, next) => {
   try {
     const { wallet } = req.locals;
+
+    await getTransactions(wallet.wallet_address);
+    
+
     const transactions =  await getTransactionsBySenderAddr({ 
       address: wallet.wallet_address,
       limit: req.query.limit || DEFAULT_QUERY_LIMIT,

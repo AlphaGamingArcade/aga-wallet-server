@@ -31,6 +31,7 @@ CREATE TABLE blockchain_transaction(
     tx_status CHAR(1) NOT NULL,
     tx_hash VARCHAR(256) NOT NULL,
     tx_block_hash VARCHAR(256) NOT NULL,
+    tx_type char(1) NOT NULL,
     tx_created_at DATETIME DEFAULT GETDATE(),
     tx_updated_at DATETIME DEFAULT GETDATE()
 )
@@ -60,3 +61,12 @@ create table blockchain_log(
     log_created_at DATETIME DEFAULT GETDATE(),
     log_updated_at DATETIME DEFAULT GETDATE()
 )
+
+CREATE TABLE blockchain_asset(
+    asset_id int IDENTITY(1, 1) PRIMARY KEY NOT NULL,
+    asset_name varchar(50) NOT NULL UNIQUE,
+    asset_network varchar(50) NOT NULL,
+    asset_symbol varchar(20) NOT NULL UNIQUE,
+    asset_created_at DATETIME DEFAULT GETDATE(),
+    asset_updated_at DATETIME DEFAULT GETDATE()
+);

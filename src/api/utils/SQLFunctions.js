@@ -15,6 +15,22 @@ module.exports = class SQLFunctions {
         db.release();
       }
     }
+
+    static async insertQueryMultiple(params) {
+      const db = await connectDb();
+      try {
+        const { tablename, columns, multipleValues } = params;
+        const valuesString = multipleValues.map(values => `(${values.join(', ')})`).join(', ');
+        const query = `INSERT INTO ${tablename} (${columns.join(', ')}) VALUES ${valuesString}`;
+        const request = db.request();
+        await request.query(query);
+        return { responseCode: 0 };
+      } catch (error) {
+        throw new Error(`Invalid INSERT: ${error.message}`);
+      } finally {
+        db.release();
+      }
+    }
   
     static async selectQuery(params) {
       const db = await connectDb();

@@ -19,14 +19,20 @@ exports.convertPlanckToDecimal = (amountInPlanck) => {
 exports.transferAsset = async (transferAssetObject) => {
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
-    const { senderMnemonic, recipientAddress, amount } = transferAssetObject;
+    const { senderMnemonic, senderAddress, recipientAddress, amount } = transferAssetObject;
   
     try {
         const keyring = new Keyring({ type: 'sr25519' });
         const sender = keyring.addFromMnemonic(senderMnemonic);
         const { nonce } = await api.query.system.account(sender.address);
         const transfer = api.tx.balances.transferAllowDeath(recipientAddress, BigInt(amount));
-  
+        
+        // Ensure the sender address matches the derived address from the mnemonic
+        const derivedAddress = sender.address;
+        if (derivedAddress !== senderAddress) {
+            throw new Error('The sender address does not match the address derived from the mnemonic.');
+        }
+
         const result = await new Promise((resolve, reject) => {
             transfer.signAndSend(sender, { nonce }, ({ events = [], status }) => {
             if (status.isInBlock) {
@@ -190,6 +196,51 @@ exports.getWalletBalance = async (address) => {
             message: error.message,
         });
     } finally {
+        await api.disconnect();
+    }
+}
+
+exports.getTransactions = async (options) => {
+    const { walletAddress } = options
+    // Connect to the blockchain node
+    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
+    const api = await ApiPromise.create({ provider: wsProvider });
+  
+    try {
+       // Fetch the latest block number
+        const latestHeader = await api.rpc.chain.getHeader();
+        const latestBlockNumber = latestHeader.number.toNumber();
+
+        console.log(`Latest block number: ${latestBlockNumber}`);
+
+        // Define the range of blocks to scan (e.g., last 100 blocks)
+        const startBlockNumber = Math.max(0, latestBlockNumber - 100);
+
+        // Loop through the blocks and query events
+        for (let blockNumber = startBlockNumber; blockNumber <= latestBlockNumber; blockNumber++) {
+            const blockHash = await api.rpc.chain.getBlockHash(blockNumber);
+            const events = await api.query.system.events.at(blockHash);
+
+            events.forEach(({ event }) => {
+            const { method, section } = event;
+
+            // Filter events related to balances transfer
+            if (section === 'balances' && method === 'Transfer') {
+                const [from, to, amount] = event.data;
+
+                if (from.toString() === walletAddress || to.toString() === walletAddress) {
+                console.log(`Transaction found in block ${blockNumber}:`);
+                console.log(`From: ${from.toString()}`);
+                console.log(`To: ${to.toString()}`);
+                console.log(`Amount: ${amount.toString()}`);
+                }
+            }
+            });
+        }
+    } catch (error) {
+        console.log(error)
+    } finally {
+        // Disconnect from the node
         await api.disconnect();
     }
 }
