@@ -3,7 +3,8 @@ const { omit } = require('lodash');
 const { findUserById } = require('../models/user.model');
 const { getWalletsByUserId } = require('../models/wallet.model');
 const { getWalletsBalance } = require('../services/chainProvider');
-const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require('../utils/constants')
+const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require('../utils/constants');
+const { getNotificationsByUserId } = require('../models/notification.model');
 
 /**
  * Load user and append to req.
@@ -123,5 +124,20 @@ exports.wallets = async (req, res, next) => {
     return res.json({ wallets: walletsData, metadata: result.metadata });
   } catch (error) {
     next(error);
+  }
+}
+
+exports.notifications = async (req, res, next) => {
+  try {
+    const { user } = req.locals;
+    const result = await getNotificationsByUserId({
+      userId: user.user_id,
+      limit: req.query.limit || DEFAULT_QUERY_LIMIT,
+      offset: req.query.offset || DEFAULT_QUERY_OFFSET
+    });
+    res.status(httpStatus.OK);
+    return res.json({ notifications: result.notifications, metadata: result.metadata });
+  } catch (error) {
+    return next(error)
   }
 }

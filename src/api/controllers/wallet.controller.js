@@ -69,10 +69,6 @@ exports.create = async (req, res, next) => {
 exports.getTransactions = async (req, res, next) => {
   try {
     const { wallet } = req.locals;
-
-    await getTransactions(wallet.wallet_address);
-    
-
     const transactions =  await getTransactionsBySenderAddr({ 
       address: wallet.wallet_address,
       limit: req.query.limit || DEFAULT_QUERY_LIMIT,

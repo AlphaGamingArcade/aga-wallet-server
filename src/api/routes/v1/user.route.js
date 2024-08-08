@@ -27,14 +27,18 @@ router
 
 
 router
-  .route('/:user_id/wallets')
-  .get(authorize(), controller.wallets);
-
-router
   .route('/:user_id')
   .get(authorize(LOGGED_USER), controller.get)
   .put(authorize(LOGGED_USER), validate(replaceUser), controller.replace)
   .patch(authorize(LOGGED_USER), validate(updateUser), controller.update)
   .delete(authorize(LOGGED_USER), controller.remove);
+
+router
+  .route('/:user_id/wallets')
+  .get(authorize(), controller.wallets);
+
+router
+  .route('/:user_id/notifications')
+  .get(authorize(), controller.notifications);
 
 module.exports = router;

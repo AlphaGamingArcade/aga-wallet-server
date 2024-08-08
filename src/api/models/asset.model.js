@@ -7,8 +7,8 @@ exports.getAssetById = async (id) => {
     if(id){
         const params = {
             tablename: "blockchain_asset", 
-            columns: ["asset_id", "asset_name", "asset_network", "asset_symbol",], 
-            condition: `asset_id='${id}'`
+            columns: ["asset_id", "asset_name", "asset_network", "asset_symbol", "asset_icon"], 
+            condition: `asset_id=${id}`
         }
         asset = await SQLFunctions.selectQuery(params);
     }
@@ -27,17 +27,16 @@ exports.getAssets = async (options) => {
     const { limit, offset, orderBy = "asset_id" } = options;
     let assets, totalCount;
     const err = { message: 'Error retrieving assets' }
-    
     const countParams = {
         tablename: "blockchain_asset", 
         columns: ["COUNT(*) AS total"], 
-        condition: `1`
+        condition: `1=1`
     };
 
     const params = {
         tablename: "blockchain_asset", 
-        columns: ["asset_id", "asset_name", "asset_network", "asset_symbol"], 
-        condition: `1`,
+        columns: ["asset_id", "asset_name", "asset_network", "asset_symbol", "asset_icon"], 
+        condition: `1=1`,
         limit, 
         offset, 
         orderBy

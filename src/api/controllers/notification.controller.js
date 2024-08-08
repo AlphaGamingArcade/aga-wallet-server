@@ -1,5 +1,5 @@
 const httpStatus = require("http-status");
-const { getAssetById, getAssets } = require("../models/asset.model");
+const { getNotificationById, getNotifications } = require("../models/notification.model");
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
 
 /**
@@ -8,8 +8,8 @@ const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constant
  */
 exports.load = async (req, res, next, assetId) => {
     try {
-      const asset = await getAssetById(assetId);
-      req.locals = { asset: { ...asset } };
+      const notification = await getNotificationById(assetId);
+      req.locals = { notification: { ...notification } };
       return next();
     } catch (error) {
       return next(error);
@@ -20,20 +20,21 @@ exports.load = async (req, res, next, assetId) => {
  * Get asset
  * @public
  */
-exports.get = (req, res) => res.json(req.locals.asset);
+exports.get = (req, res) => res.json(req.locals.notification);
 
 /**
- * Get All Assets
+ * Get asset
+ * @public
  */
-exports.getAssets = async (req, res, next) => {
+exports.getNotifications = async (req, res, next) => {
   try {
-    const assets = await getAssets({
+    const notifications = await getNotifications({
       limit: req.query.limit || DEFAULT_QUERY_LIMIT,
       offset: req.query.offset || DEFAULT_QUERY_OFFSET
     });
     res.status(httpStatus.OK);
-    return res.json({ ...assets });
+    return res.json({ ...notifications });
   } catch (error) {
-    return next(error)
+    next(error)
   }
-}
+};

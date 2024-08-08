@@ -67,6 +67,17 @@ CREATE TABLE blockchain_asset(
     asset_name varchar(50) NOT NULL UNIQUE,
     asset_network varchar(50) NOT NULL,
     asset_symbol varchar(20) NOT NULL UNIQUE,
+    asset_icon varchar(250) NOT NULL,
     asset_created_at DATETIME DEFAULT GETDATE(),
     asset_updated_at DATETIME DEFAULT GETDATE()
+);
+
+CREATE TABLE blockchain_notification (
+    notification_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    notification_user_id INT NOT NULL,
+    notification_type VARCHAR(50) NOT NULL,
+    notification_message VARCHAR(250) NOT NULL,
+    notification_status VARCHAR(50) CHECK (notification_status IN ('unread', 'read', 'dismissed', 'archived', 'action_taken')) NOT NULL,
+    notification_created_at DATETIME DEFAULT GETDATE(),
+    notification_updated_at DATETIME DEFAULT GETDATE()
 );

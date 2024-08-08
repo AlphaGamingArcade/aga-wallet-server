@@ -10,6 +10,7 @@ const routes = require('../api/routes/v1');
 const { logs } = require('./vars');
 const strategies = require('./passport');
 const error = require('../api/middlewares/error');
+const path = require('path')
 
 /**
 * Express instance
@@ -42,6 +43,9 @@ app.use(passport.initialize());
 passport.use('jwt', strategies.jwt);
 passport.use('facebook', strategies.facebook);
 passport.use('google', strategies.google);
+
+// Serve static files from the "public/assets" directory
+app.use('/assets', express.static(path.join(__dirname, './../../public/assets')));
 
 // mount api v1 routes
 app.use('/v1', routes);
