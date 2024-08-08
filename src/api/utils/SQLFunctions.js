@@ -59,7 +59,21 @@ module.exports = class SQLFunctions {
         db.release();
       }
     }
-  
+    
+    static async selectDistinctQuery(params) {
+      const db = await connectDb();
+      try {
+        const { tablename, columns, condition } = params;
+        const query = `SELECT DISTINCT ${columns.join(', ')} FROM ${tablename} WHERE ${condition}`;
+        const result = await db.request().query(query);
+        return { data: result.recordset };
+      } catch (error) {
+        throw new Error(`Invalid SELECT DISTINCT: ${error.message}`);
+      } finally {
+        db.release();
+      }
+    }
+
     static async updateQuery(params) {
       const db = await connectDb();
       try {

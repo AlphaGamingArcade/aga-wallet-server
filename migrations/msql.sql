@@ -81,3 +81,15 @@ CREATE TABLE blockchain_notification (
     notification_created_at DATETIME DEFAULT GETDATE(),
     notification_updated_at DATETIME DEFAULT GETDATE()
 );
+
+CREATE TABLE blockchain_game (
+    game_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    game_name VARCHAR(50) NOT NULL,
+    game_image VARCHAR(250) NOT NULL,
+    game_url VARCHAR(250) NOT NULL,
+    game_status CHAR(1) NOT NULL,
+    game_players INT NOT NULL,
+    game_genre NVARCHAR(50) NOT NULL,
+    game_created_at DATETIME DEFAULT GETDATE(),
+    game_updated_at DATETIME DEFAULT GETDATE()
+)
