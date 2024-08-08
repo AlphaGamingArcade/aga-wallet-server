@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require("../../controllers/asset.controller");
-const { authorize } = require('../../middlewares/auth');
+const { authorize, LOGGED_USER } = require('../../middlewares/auth');
 const { getAsset } = require('../../validations/asset.validation');
 const { validate } = require('express-validation');
 

@@ -35,10 +35,10 @@ router
 
 router
   .route('/:user_id/wallets')
-  .get(authorize(), controller.wallets);
+  .get(authorize(LOGGED_USER), controller.wallets);
 
 router
   .route('/:user_id/notifications')
-  .get(authorize(), controller.notifications);
+  .get(authorize(LOGGED_USER), controller.notifications);
 
 module.exports = router;

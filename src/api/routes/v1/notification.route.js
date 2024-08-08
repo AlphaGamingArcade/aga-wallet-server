@@ -3,8 +3,7 @@ const router = express.Router();
 const controller = require("../../controllers/notification.controller");
 const { authorize } = require('../../middlewares/auth');
 const { validate } = require('express-validation');
-const { getNotification } = require('../../validations/notification.validator');
-
+const { getNotification, deleteNotification, updateNotification } = require('../../validations/notification.validator');
 
 /**
  * Load wallet when API with asset_id route parameter is hit
@@ -12,10 +11,11 @@ const { getNotification } = require('../../validations/notification.validator');
 router.param('notification_id', controller.load);
 
 router.route('/:notification_id')
-  .get(authorize(), validate(getNotification), controller.get);
+  .get(authorize(), validate(getNotification), controller.get)
+  .delete(authorize(), validate(deleteNotification), controller.get)
+  .put(authorize(), validate(updateNotification), controller.get);
 
 router.route('/')
   .get(authorize(), controller.getNotifications);
-
 
 module.exports = router
