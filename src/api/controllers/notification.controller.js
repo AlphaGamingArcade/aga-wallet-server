@@ -3,12 +3,12 @@ const Notification = require("../models/notification.model");
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
 
 /**
- * Load wallet and append to req.locals.
+ * Load notification and append to req.locals.
  * @public
  */
-exports.load = async (req, res, next, assetId) => {
+exports.load = async (req, res, next, id) => {
     try {
-      const notification = await Notification.getNotificationById(assetId);
+      const notification = await Notification.getNotificationById(id);
       req.locals = { notification: { ...notification } };
       return next();
     } catch (error) {

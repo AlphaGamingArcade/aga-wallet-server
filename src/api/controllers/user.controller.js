@@ -1,9 +1,10 @@
 const httpStatus = require('http-status');
 const { omit } = require('lodash');
 const { findUserById } = require('../models/user.model');
-const { getWalletsByUserId } = require('../models/wallet.model');
 const { getWalletsBalance } = require('../services/chainProvider');
 const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require('../utils/constants');
+
+const Wallet = require('../models/wallet.model');
 const Notification = require('../models/notification.model');
 
 /**
@@ -113,14 +114,13 @@ exports.remove = (req, res, next) => {
 exports.wallets = async (req, res, next) => {
   try {
     const { user } = req.locals;
-    const result = await getWalletsByUserId({ 
+    const result = await Wallet.getWalletsByUserId({ 
       userId: user.user_id,
       limit: req.query.limit || DEFAULT_QUERY_LIMIT,
       offset: req.query.offset || DEFAULT_QUERY_OFFSET
     });
     const walletsAddrs = result.wallets.map(wallet => wallet.wallet_address)
     const walletsData = await getWalletsBalance(walletsAddrs);
-    console.log(walletsData)
     res.status(httpStatus.OK);
     return res.json({ wallets: walletsData, metadata: result.metadata });
   } catch (error) {

@@ -1,13 +1,14 @@
 const httpStatus = require("http-status");
-const { saveWallet, STATUS_ACTIVE, checkDuplicateWallet, getWalletByAddress } = require("../models/wallet.model");
 const { findUserById } = require("../models/user.model");
 const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
 const { env } = require("../../config/vars");
 const bcrypt = require("bcryptjs");
-const { getWalletBalance, getTransactions } = require("../services/chainProvider");
-const { getTransactionsBySenderAddr } = require("../models/transaction.model");
+const { getWalletBalance } = require("../services/chainProvider");
 const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require("../utils/constants");
+
+const Wallet = require("../models/wallet.model");
+const Transaction = require("../models/transaction.model");
 
 /**
  * Load wallet and append to req.locals.
@@ -15,7 +16,7 @@ const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require("../utils/constant
  */
 exports.load = async (req, res, next, address) => {
   try {
-    const wallet = await getWalletByAddress(address);
+    const wallet = await Wallet.getByAddress(address);
     const data = await getWalletBalance(address);
     req.locals = { wallet: { ...wallet, ...data } };
     return next();
@@ -46,11 +47,11 @@ exports.create = async (req, res, next) => {
     const hash = await bcrypt.hash(password, rounds);
     password = hash;
 
-    const wallet = await saveWallet({
+    const wallet = await Wallet.save({
       userId: user.user_id, 
       walletAccount: req.body.account_id, 
       walletAlias: "", 
-      walletStatus: STATUS_ACTIVE, 
+      walletStatus: Wallet.STATUS_ACTIVE, 
       walletMnemonic: mnemonic, 
       walletPassword: password,
       walletAddress: pair.address
@@ -59,7 +60,7 @@ exports.create = async (req, res, next) => {
     res.status(httpStatus.CREATED);
     return res.json({ wallet });   
   } catch (error) {
-    return next(checkDuplicateWallet(error));
+    return next(Wallet.checkDuplicate(error));
   }
 }
 
@@ -69,7 +70,7 @@ exports.create = async (req, res, next) => {
 exports.getTransactions = async (req, res, next) => {
   try {
     const { wallet } = req.locals;
-    const transactions =  await getTransactionsBySenderAddr({ 
+    const transactions =  await Transaction.getBySenderAddr({ 
       address: wallet.wallet_address,
       limit: req.query.limit || DEFAULT_QUERY_LIMIT,
       offset: req.query.offset || DEFAULT_QUERY_OFFSET

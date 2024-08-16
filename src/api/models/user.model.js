@@ -57,7 +57,6 @@ exports.findUserByEmail = async (email) => {
     });
 }
 
-
 exports.saveUser = async (user) => {
     let { email, password, name, services, role, picture } = user;
 
