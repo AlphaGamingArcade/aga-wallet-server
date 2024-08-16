@@ -1,111 +1,208 @@
 const httpStatus = require("http-status");
 const APIError = require("../errors/api-error");
-const SQLFunctions = require("../utils/sqlFunctions")
+const SQLFunctions = require("../utils/sqlFunctions");
 
-exports.getNotificationsByUserId = async (options) => {
-    const { userId, limit, offset, orderBy = "notification_id" } = options;
-    let notifications, totalCount;
-    const err = { message: 'Error retrieving notifications' }
-    if(userId){
+module.exports = class Notification {
+    static async getNotificationsByUserId(options) {
+        const { userId, limit, offset, orderBy = "notification_id" } = options;
+        let notifications, totalCount, totalUnread;
+        
+        if (userId) {
+            const unreadCountParams = {
+                tablename: "blockchain_notification", 
+                columns: ["COUNT(*) AS total"], 
+                condition: `notification_user_id=${userId} AND notification_status = 'unread'`
+            };
+
+            const countParams = {
+                tablename: "blockchain_notification", 
+                columns: ["COUNT(*) AS total"], 
+                condition: `notification_user_id=${userId}`
+            };
+        
+            const params = {
+                tablename: "blockchain_notification", 
+                columns: [
+                    "notification_id", "notification_user_id", 
+                    "notification_type", "notification_message", 
+                    "notification_status", "notification_created_at"
+                ], 
+                condition: `notification_user_id=${userId}`,
+                limit, 
+                offset, 
+                orderBy
+            };
+        
+            const result = await Promise.all([
+                SQLFunctions.selectQuery(countParams),
+                SQLFunctions.selectQueryMultiple(params),
+                SQLFunctions.selectQuery(unreadCountParams),
+            ]);
+        
+            totalCount = result[0];
+            notifications = result[1];
+            totalUnread = result[2];
+        }
+
+        const err = {
+            message: "Error retrieving notifications",
+            status: httpStatus.INTERNAL_SERVER_ERROR
+        }
+
+        if (notifications?.data?.length > 0 && totalCount?.data) {
+            return {
+                notifications: notifications.data,
+                metadata: { count: totalCount.data.total, unread: totalUnread.data.total }
+            };
+        } else {
+            err.message = "No notifications found",
+            err.status = httpStatus.NOT_FOUND
+        }
+
+        throw new APIError(err);
+    }
+    
+    static async getNotificationById(notificationId) {
+        if (!notificationId) {
+            throw new APIError({
+                message: 'Notification ID is required',
+                status: httpStatus.BAD_REQUEST
+            });
+        }
+
+        const params = {
+            tablename: "blockchain_notification", 
+            columns: [
+                "notification_id", "notification_user_id", 
+                "notification_type", "notification_message", 
+                "notification_status", "notification_created_at", 
+                "notification_updated_at"
+            ], 
+            condition: `notification_id=${notificationId}`
+        };
+        
+        const notification = await SQLFunctions.selectQuery(params);
+
+        if (notification.data) {
+            return notification.data;
+        }
+
+        throw new APIError({
+            message: 'Notification does not exist',
+            status: httpStatus.NOT_FOUND
+        });
+    }
+
+    static async getNotifications(options) {
+        const { limit, offset, orderBy = "notification_id" } = options;
+        
         const countParams = {
             tablename: "blockchain_notification", 
             columns: ["COUNT(*) AS total"], 
-            condition: `notification_user_id=${userId}`
+            condition: `1=1`
         };
     
         const params = {
             tablename: "blockchain_notification", 
-            columns: ["notification_id","notification_user_id", "notification_type", "notification_message", "notification_status", "notification_created_at"], 
-            condition: `notification_user_id=${userId}`,
+            columns: [
+                "notification_id", "notification_user_id", 
+                "notification_type", "notification_message", 
+                "notification_status", "notification_created_at"
+            ], 
+            condition: `1=1`,
             limit, 
             offset, 
             orderBy
-        }
+        };
     
         const result = await Promise.all([
             SQLFunctions.selectQuery(countParams),
             SQLFunctions.selectQueryMultiple(params)
-        ])
+        ]);
     
-        totalCount = result[0]
-        notifications = result[1]    
-    }
+        const totalCount = result[0];
+        const notifications = result[1];
 
-    if(notifications.data && totalCount.data){
-        if(notifications.data.length > 0){
+        if (notifications?.data?.length > 0 && totalCount?.data) {
             return {
                 notifications: notifications.data,
                 metadata: { count: totalCount.data.total }
-            }
+            };
         }
-        err.message = "No notifications found"
-        err.status = httpStatus.NOT_FOUND
-    } else {
-        err.httpStatus = httpStatus.BAD_REQUEST
+
+        throw new APIError({
+            message: notifications?.data?.length === 0 ? "No notifications found" : "Error retrieving notifications",
+            status: notifications?.data?.length === 0 ? httpStatus.NOT_FOUND : httpStatus.BAD_REQUEST
+        });
     }
 
-    throw new APIError(err);
-}
-exports.getNotificationById = async (notificationId) => {
-    let notification;
-    if(notificationId){
+    static async delete(options) {
+        const { id } = options;
+
         const params = {
             tablename: "blockchain_notification", 
-            columns: ["notification_id", "notification_user_id", "notification_type", "notification_message", "notification_status", "notification_created_at", "notification_updated_at"], 
-            condition: `notification_id=${notificationId}`
-        }
-        notification = await SQLFunctions.selectQuery(params);
-    }
-
-    if(notification.data){
-        return notification.data
-    }
-
-    throw new APIError({
-        message: 'Notification does not exist',
-        status: httpStatus.NOT_FOUND,
-    });
-}
-exports.getNotifications = async (options) => {
-    const { limit, offset, orderBy = "notification_id" } = options;
-    let notifications, totalCount;
-    const err = { message: 'Error retrieving notifications' }
+            condition: `notification_id=${id}`
+        };
     
-    const countParams = {
-        tablename: "blockchain_notification", 
-        columns: ["COUNT(*) AS total"], 
-        condition: `1=1`
-    };
-
-    const params = {
-        tablename: "blockchain_notification", 
-        columns: ["notification_id","notification_user_id", "notification_type", "notification_message", "notification_status", "notification_created_at"], 
-        condition: `1=1`,
-        limit, 
-        offset, 
-        orderBy
-    }
-
-    const result = await Promise.all([
-        SQLFunctions.selectQuery(countParams),
-        SQLFunctions.selectQueryMultiple(params)
-    ])
-
-    totalCount = result[0]
-    notifications = result[1]
-
-    if(notifications.data && totalCount.data){
-        if(notifications.data.length > 0){
-            return {
-                notifications: notifications.data,
-                metadata: { count: totalCount.data.total }
-            }
+        const { responseCode } = await SQLFunctions.deleteQuery(params);
+    
+        if (responseCode === 0) {
+            return { message: "Success removing notification" };
         }
-        err.message = "No notifications found"
-        err.status = httpStatus.NOT_FOUND
-    } else {
-        err.httpStatus = httpStatus.BAD_REQUEST
+        
+        throw new APIError({
+            message: 'Failed removing notification',
+            status: httpStatus.INTERNAL_SERVER_ERROR
+        });
     }
 
-    throw new APIError(err);
+    static async update(options) {
+        const { id, userId, type, message, status } = options;
+
+        const params = {
+            tablename: "blockchain_notification",
+            newValues: [
+                `notification_user_id='${userId}'`,
+                `notification_type='${type}'`, 
+                `notification_message='${message}'`, 
+                `notification_status='${status}'`
+            ],
+            condition: `notification_id='${id}'`
+        };
+    
+        const { responseCode, updatedRecord } = await SQLFunctions.updateQuery(params);
+    
+        if (responseCode === 0) {
+            return updatedRecord;
+        }
+        
+        throw new APIError({
+            message: 'Failed updating notification',
+            status: httpStatus.INTERNAL_SERVER_ERROR
+        });
+    }
+
+    static async updateStatus(options) {
+        const { id, status } = options;
+
+        const params = {
+            tablename: "blockchain_notification",
+            newValues: [
+                `notification_status='${status}'`
+            ],
+            condition: `notification_id='${id}'`
+        };
+    
+        const { responseCode, updatedRecord } = await SQLFunctions.updateQuery(params);
+    
+        if (responseCode === 0) {
+            return updatedRecord;
+        }
+        
+        throw new APIError({
+            message: 'Failed updating notification',
+            status: httpStatus.INTERNAL_SERVER_ERROR
+        });
+    }
 }
+

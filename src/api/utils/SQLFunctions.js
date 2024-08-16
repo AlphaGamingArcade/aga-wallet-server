@@ -78,15 +78,24 @@ module.exports = class SQLFunctions {
       const db = await connectDb();
       try {
         const { tablename, newValues, condition } = params;
-        const query = `UPDATE ${tablename} SET ${newValues.join(', ')} WHERE ${condition}`;
-        await db.request().query(query);
-        return { responseCode: 0 };
+        
+        // Perform the UPDATE query
+        const updateQuery = `UPDATE ${tablename} SET ${newValues.join(', ')} WHERE ${condition}`;
+        await db.request().query(updateQuery);
+    
+
+        // Fetch the updated record after the update
+        const selectQuery = `SELECT * FROM ${tablename} WHERE ${condition}`;
+        const result = await db.request().query(selectQuery);
+    
+        // Return the updated record (assuming there will only be one record updated)
+        return { responseCode: 0, updatedRecord: result.recordset[0] };
       } catch (error) {
         throw new Error(`Invalid UPDATE: ${error.message}`);
       } finally {
         db.release();
       }
-    }
+    }    
   
     static async deleteQuery(params) {
       const db = await connectDb();

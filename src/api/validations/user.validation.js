@@ -12,6 +12,14 @@ module.exports = {
     }),
   },
 
+   // POST /v1/users/:user_id
+   getUser: {
+    params: Joi.object({
+      user_id: Joi.number().required()
+    })
+  },
+
+
   // POST /v1/users
   createUser: {
     body: Joi.object({

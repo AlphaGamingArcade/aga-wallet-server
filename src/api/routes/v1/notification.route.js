@@ -10,10 +10,10 @@ const { getNotification, deleteNotification, updateNotification } = require('../
  */
 router.param('notification_id', controller.load);
 
-router.route('/:notification_id')
-  .get(authorize(), validate(getNotification), controller.get)
-  .delete(authorize(), validate(deleteNotification), controller.get)
-  .put(authorize(), validate(updateNotification), controller.get);
+// router.route('/:notification_id')
+//   .get(authorize(), validate(getNotification), controller.get)
+//   .delete(authorize(), validate(deleteNotification), controller.delete)
+//   .put(authorize(), validate(updateNotification), controller.put);
 
 router.route('/')
   .get(authorize(), controller.getNotifications);

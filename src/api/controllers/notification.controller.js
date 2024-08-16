@@ -1,5 +1,5 @@
 const httpStatus = require("http-status");
-const { getNotificationById, getNotifications } = require("../models/notification.model");
+const Notification = require("../models/notification.model");
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
 
 /**
@@ -8,7 +8,7 @@ const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constant
  */
 exports.load = async (req, res, next, assetId) => {
     try {
-      const notification = await getNotificationById(assetId);
+      const notification = await Notification.getNotificationById(assetId);
       req.locals = { notification: { ...notification } };
       return next();
     } catch (error) {
@@ -26,9 +26,52 @@ exports.get = (req, res) => res.json(req.locals.notification);
  * Get asset
  * @public
  */
+exports.delete = async (req, res) => {
+  const { notification } = req.locals;
+
+  await Notification.delete({ id: notification.notification_id });
+  
+  res.status(httpStatus.OK);
+  return res.json({ message: "Notification deleted" });
+};
+
+/**
+ * Get asset
+ * @public
+ */
+exports.put = async (req, res) => {
+  const { notification } = req.locals;
+  
+ 
+};
+
+
+/**
+ * Get asset
+ * @public
+ */
+exports.patch = async (req, res, next) => {
+  try {
+    const { notification } = req.locals;
+    const updatedNotification = await Notification.updateStatus({
+      id: notification.notification_id,
+      status: req.body.status
+    });
+
+    res.status(httpStatus.OK);
+    return res.json(updatedNotification);
+  } catch (error) {
+    next(error)
+  }
+};
+
+/**
+ * Get asset
+ * @public
+ */
 exports.getNotifications = async (req, res, next) => {
   try {
-    const notifications = await getNotifications({
+    const notifications = await Notification.getNotifications({
       limit: req.query.limit || DEFAULT_QUERY_LIMIT,
       offset: req.query.offset || DEFAULT_QUERY_OFFSET
     });
