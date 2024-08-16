@@ -31,7 +31,7 @@ exports.send = async (req, res, next) => {
   try {
     const senderMnemonic = await getWalletMnemonic({
       walletAddress: req.body.sender_address,
-      walletPassword: req.body.password,
+      password: req.body.password,
     });
     const senderAddress = req.body.sender_address;
     const recipientAddress = req.body.recipient_address;

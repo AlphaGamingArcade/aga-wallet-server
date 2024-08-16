@@ -63,7 +63,7 @@ exports.getUserWallet = async (options) => {
 }
 
 exports.getWalletMnemonic = async (options) => {
-    const { walletAddress, walletPassword } = options;
+    const { walletAddress, password } = options;
     
     let wallet;
     if(walletAddress){
@@ -80,8 +80,9 @@ exports.getWalletMnemonic = async (options) => {
     }
 
     if(wallet.data){
-       if(passwordMatches(wallet.data.wallet_password, walletPassword)){
-          return wallet.data.wallet_mnemonic
+       const isOk = await passwordMatches(password, wallet.data.wallet_password)
+       if(isOk){
+            return wallet.data.wallet_mnemonic
        }
        err.status = httpStatus.UNAUTHORIZED
        err.message = "Incorrect wallet password."

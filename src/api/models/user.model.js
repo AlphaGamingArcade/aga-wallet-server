@@ -95,8 +95,8 @@ exports.saveUser = async (user) => {
     });
 }
 
-exports.passwordMatches = async (password, inputPassword) => {
-    return bcrypt.compare(password, inputPassword);
+exports.passwordMatches = async (inputPassword, password) => {
+    return bcrypt.compare(inputPassword, password);
 }
 
 exports.findAndGenerateToken = async (options) => {
