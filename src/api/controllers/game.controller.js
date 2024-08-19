@@ -1,6 +1,7 @@
 const httpStatus = require("http-status");
 const { getGameById, getGames } = require("../models/game.model");
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
+const Game = require("../models/game.model");
 
 /**
  * Load wallet and append to req.locals.
@@ -27,12 +28,18 @@ exports.get = (req, res) => res.json(req.locals.game);
  */
 exports.list = async (req, res, next) => {
   try {
-    const games = await getGames({
-      limit: req.query.limit || DEFAULT_QUERY_LIMIT,
-      offset: req.query.offset || DEFAULT_QUERY_OFFSET
+    const { query } = req
+
+    const genreCondition = query.genre ? `AND game_genre='${query.genre}'` : '';
+    const games = await Game.list({
+      condition: `1=1 ${genreCondition}`,
+      sortBy: query.sort_by || "game_id", 
+      orderBy: query.order_by || "asc",
+      limit: query.limit || DEFAULT_QUERY_LIMIT,
+      offset: query.offset || DEFAULT_QUERY_OFFSET,
     });
     res.status(httpStatus.OK);
-    return res.json({ ...games });
+    return res.json(games);
   } catch (error) {
     return next(error)
   }
