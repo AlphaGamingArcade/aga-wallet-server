@@ -13,10 +13,6 @@ module.exports = {
         wallet_address: Joi.string().required()
     }),
     },
-  // GET /v1/wallets
-  getWallets: {
-  
-  },
   // POST /v1/wallets
   createWallet:{
     body: Joi.object({

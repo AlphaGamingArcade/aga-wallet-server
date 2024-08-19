@@ -85,3 +85,21 @@ exports.list = async (req, res, next) => {
     next(error)
   }
 };
+
+exports.listUserNotifications = async (req, res, next) => {
+  try {
+    const { query } = req;
+    const { user } = req.locals;
+    const notifications = await Notification.list({
+      condition: `notification_user_id=${user.user_id}`,
+      sortBy: query.sort_by || "notification_id", 
+      orderBy: query.order_by || "asc",
+      limit: query.limit || DEFAULT_QUERY_LIMIT,
+      offset: query.offset || DEFAULT_QUERY_OFFSET
+    });
+    res.status(httpStatus.OK);
+    return res.json(notifications);
+  } catch (error) {
+    return next(error)
+  }
+}

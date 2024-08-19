@@ -4,7 +4,7 @@ const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
 const { env } = require("../../config/vars");
 const bcrypt = require("bcryptjs");
-const { getWalletBalance } = require("../services/chainProvider");
+const { getWalletBalance, getWalletsBalance } = require("../services/chainProvider");
 const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require("../utils/constants");
 
 const Wallet = require("../models/wallet.model");
@@ -61,5 +61,28 @@ exports.create = async (req, res, next) => {
     return res.json({ wallet });   
   } catch (error) {
     return next(Wallet.checkDuplicate(error));
+  }
+}
+
+/** 
+ * Get user wallets in list
+ */
+exports.listUserWallets = async (req, res, next) => {
+  try {
+    const { query } = req
+    const { user } = req.locals;
+    const result = await Wallet.list({ 
+      condition: `wallet_user_id=${user.user_id}`,
+      sortBy: query.sort_by || "wallet_id", 
+      orderBy: query.order_by || "asc",
+      limit: query.limit || DEFAULT_QUERY_LIMIT,
+      offset: query.offset || DEFAULT_QUERY_OFFSET
+    });
+    const walletsAddrs = result.wallets.map(wallet => wallet.wallet_address)
+    const walletsData = await getWalletsBalance(walletsAddrs);
+    res.status(httpStatus.OK);
+    return res.json({ wallets: walletsData, metadata: result.metadata });
+  } catch (error) {
+    next(error);
   }
 }

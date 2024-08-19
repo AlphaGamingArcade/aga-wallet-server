@@ -1,7 +1,8 @@
 const express = require('express');
 const { validate } = require('express-validation');
-const controller = require('../../controllers/user.controller');
+const userController = require('../../controllers/user.controller');
 const notificationController = require('../../controllers/notification.controller')
+const walletController = require('../../controllers/wallet.controller')
 const { authorize, ADMIN, LOGGED_USER } = require('../../middlewares/auth');
 const {
   listUsers,
@@ -11,42 +12,42 @@ const {
   getUser,
 } = require('../../validations/user.validation');
 const { getNotification, deleteNotification, updateNotification, listNotifications } = require('../../validations/notification.validator');
+const { listWallets } = require('../../validations/wallet.validation');
 
 const router = express.Router();
 
 /**
  * Load user when API with userId route parameter is hit
  */
-router.param('user_id', controller.load);
+router.param('user_id', userController.load);
 router.param('notification_id', notificationController.load);
 
 router
   .route('/')
-  .get(validate(listUsers), authorize(ADMIN),  controller.list)
-  .post(validate(createUser), authorize(ADMIN),  controller.create);
+  .get(validate(listUsers), authorize(ADMIN),  userController.list)
+  .post(validate(createUser), authorize(ADMIN),  userController.create);
 
 router
   .route('/profile')
-  .get(authorize(), controller.loggedIn);
-
+  .get(authorize(), userController.loggedIn);
 
 router
   .route('/:user_id')
-  .get(authorize(LOGGED_USER), validate(getUser), controller.get)
-  .put(authorize(LOGGED_USER), validate(replaceUser), controller.replace)
-  .patch(authorize(LOGGED_USER), validate(updateUser), controller.update)
-  .delete(authorize(LOGGED_USER), controller.remove);
+  .get(authorize(LOGGED_USER), validate(getUser), userController.get)
+  .put(authorize(LOGGED_USER), validate(replaceUser), userController.replace)
+  .patch(authorize(LOGGED_USER), validate(updateUser), userController.update)
+  .delete(authorize(LOGGED_USER), userController.remove);
 
 router
   .route('/:user_id/wallets')
-  .get(authorize(LOGGED_USER), controller.wallets);
+  .get(authorize(LOGGED_USER), validate(listWallets), walletController.listUserWallets);
 
 /**
  * NOTIFICATIONS
  */
 router
   .route('/:user_id/notifications')
-  .get(authorize(LOGGED_USER), validate(listNotifications), controller.notifications);
+  .get(authorize(LOGGED_USER), validate(listNotifications), notificationController.listUserNotifications);
 
 router
   .route('/:user_id/notifications/:notification_id')

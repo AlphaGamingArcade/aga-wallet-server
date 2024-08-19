@@ -7,6 +7,49 @@ const { passwordMatches } = require("./user.model");
 class Wallet {
     static STATUS_ACTIVE = 'a';
     static STATUS_SUSPENDED = 's';
+
+    static async list(options){
+        const { limit, offset, condition = "1=1", sortBy = "wallet_id", orderBy = "asc" } = options;
+        
+        const params = {
+            tablename: "blockchain_wallet", 
+            columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_mnemonic", "wallet_address", "wallet_created_at", "wallet_updated_at"], 
+            condition,
+            sortBy,
+            orderBy,
+            limit,
+            offset
+        };
+
+        const countParams = {
+            tablename: "blockchain_wallet", // Changed to the correct table name
+            columns: ["COUNT(*) AS total"], 
+            condition: condition
+        };
+
+        try {
+            const result = await Promise.all([
+                SQLFunctions.selectQuery(countParams),
+                SQLFunctions.selectQueryMultiple(params),
+            ]);
+
+            const totalCount = result[0]?.data?.total || 0;
+            const wallets = result[1]?.data || [];
+
+            return {
+                wallets: wallets,
+                metadata: { count: totalCount }
+            };
+        } catch (error) {
+            console.log(error)
+            const err = {
+                message: "Error retrieving wallets",
+                status: httpStatus.INTERNAL_SERVER_ERROR
+            };
+            throw new APIError(err);
+        }
+    }
+
         
     static async save(wallet) {
         const { userId, walletAccount, walletAlias, walletStatus, walletMnemonic, walletAddress, walletPassword } = wallet;
