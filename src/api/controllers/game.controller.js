@@ -24,7 +24,7 @@ exports.load = async (req, res, next, gameId) => {
 exports.get = (req, res) => res.json(req.locals.game);
 
 /**
- * Get All Assets
+ * Get All Games
  */
 exports.list = async (req, res, next) => {
   try {
@@ -38,6 +38,30 @@ exports.list = async (req, res, next) => {
       limit: query.limit || DEFAULT_QUERY_LIMIT,
       offset: query.offset || DEFAULT_QUERY_OFFSET,
     });
+    res.status(httpStatus.OK);
+    return res.json(games);
+  } catch (error) {
+    return next(error)
+  }
+}
+
+/**
+ * Get All Assets
+ */
+exports.listGenres = async (req, res, next) => {
+  try {
+    const { query } = req
+    const games = await Game.listGenres({
+      condition: `1=1`,
+      sortBy: query.sort_by || "game_genre", 
+      orderBy: query.order_by || "asc",
+      limit: query.limit || DEFAULT_QUERY_LIMIT,
+      offset: query.offset || DEFAULT_QUERY_OFFSET,
+    });
+    
+    // Overwrite the genres property with just the genre names
+    games.genres = games.genres.map(genre => genre.game_genre);
+    
     res.status(httpStatus.OK);
     return res.json(games);
   } catch (error) {
