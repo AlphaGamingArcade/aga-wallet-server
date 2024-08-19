@@ -24,7 +24,7 @@ exports.getGameById = async (id) => {
 }
 
 exports.getGames = async (options) => {
-    const { limit, offset, orderBy = "game_id" } = options;
+    const { limit, offset, sortBy = "game_id", orderBy = "asc" } = options;
     let games, totalCount, genres;
     const err = { message: 'Error retrieving games' }
 
@@ -46,6 +46,7 @@ exports.getGames = async (options) => {
         condition: `1=1`,
         limit, 
         offset, 
+        sortBy,
         orderBy
     }
 

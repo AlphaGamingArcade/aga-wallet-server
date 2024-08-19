@@ -63,21 +63,3 @@ exports.create = async (req, res, next) => {
     return next(Wallet.checkDuplicate(error));
   }
 }
-
-/**
- * Get wallet transactions
- */
-exports.getTransactions = async (req, res, next) => {
-  try {
-    const { wallet } = req.locals;
-    const transactions =  await Transaction.getBySenderAddr({ 
-      address: wallet.wallet_address,
-      limit: req.query.limit || DEFAULT_QUERY_LIMIT,
-      offset: req.query.offset || DEFAULT_QUERY_OFFSET
-    });
-    res.status(httpStatus.OK);
-    return res.json(transactions)
-  } catch (error) {
-    return next(error)
-  }
-}

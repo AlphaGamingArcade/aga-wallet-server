@@ -10,7 +10,7 @@ const {
   updateUser,
   getUser,
 } = require('../../validations/user.validation');
-const { getNotification, deleteNotification, updateNotification } = require('../../validations/notification.validator');
+const { getNotification, deleteNotification, updateNotification, listNotifications } = require('../../validations/notification.validator');
 
 const router = express.Router();
 
@@ -46,12 +46,12 @@ router
  */
 router
   .route('/:user_id/notifications')
-  .get(authorize(LOGGED_USER), controller.notifications);
+  .get(authorize(LOGGED_USER), validate(listNotifications), controller.notifications);
 
 router
   .route('/:user_id/notifications/:notification_id')
   .get(authorize(LOGGED_USER), validate(getNotification), notificationController.get)
-  .delete(authorize(LOGGED_USER), validate(deleteNotification), notificationController.delete)
+  .delete(authorize(LOGGED_USER), validate(deleteNotification), notificationController.remove)
   .patch(authorize(LOGGED_USER), validate(updateNotification), notificationController.patch);
 
 module.exports = router;

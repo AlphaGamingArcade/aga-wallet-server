@@ -130,11 +130,14 @@ exports.wallets = async (req, res, next) => {
 
 exports.notifications = async (req, res, next) => {
   try {
+    const { query } = req;
     const { user } = req.locals;
-    const result = await Notification.getNotificationsByUserId({
-      userId: user.user_id,
-      limit: req.query.limit || DEFAULT_QUERY_LIMIT,
-      offset: req.query.offset || DEFAULT_QUERY_OFFSET
+    const result = await Notification.list({
+      condition: `notification_user_id=${user.user_id}`,
+      sortBy: query.sort_by || "notification_id", 
+      orderBy: query.order_by || "asc",
+      limit: query.limit || DEFAULT_QUERY_LIMIT,
+      offset: query.offset || DEFAULT_QUERY_OFFSET
     });
     res.status(httpStatus.OK);
     return res.json({ notifications: result.notifications, metadata: result.metadata });

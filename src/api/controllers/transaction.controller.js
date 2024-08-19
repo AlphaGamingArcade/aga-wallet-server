@@ -2,7 +2,8 @@ const httpStatus = require("http-status");
 const { transferAsset, convertToPlanks, getTransactionDetails } = require("../services/chainProvider");
 
 const Transaction = require("../models/transaction.model")
-const Wallet = require("../models/wallet.model") 
+const Wallet = require("../models/wallet.model"); 
+const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
 
 /**
  * Load wallet and append to req.locals.
@@ -59,4 +60,26 @@ exports.send = async (req, res, next) => {
     return next(Transaction.checkDuplicate(error));
   }
 }
-  
+
+/**
+ * Get transactions transactions
+ */
+exports.list = async (req, res, next) => {
+  try {
+    const { query } = req
+    const { wallet } = req.locals;
+
+    const transactions = await Transaction.list({ 
+      condition: `tx_wallet_sender_address = '${wallet.wallet_address}' OR tx_wallet_recipient_address = '${wallet.wallet_address}'`,
+      sortBy: query.sort_by || "tx_id", 
+      orderBy: query.order_by || "asc",
+      limit: query.limit || DEFAULT_QUERY_LIMIT,
+      offset: query.offset || DEFAULT_QUERY_OFFSET
+    });
+
+    res.status(httpStatus.OK);
+    return res.json(transactions)
+  } catch (error) {
+    return next(error)
+  }
+}

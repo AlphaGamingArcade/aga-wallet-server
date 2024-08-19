@@ -7,6 +7,31 @@ const { passwordMatches } = require("./user.model");
 class Wallet {
     static STATUS_ACTIVE = 'a';
     static STATUS_SUSPENDED = 's';
+        
+    static async save(wallet) {
+        const { userId, walletAccount, walletAlias, walletStatus, walletMnemonic, walletAddress, walletPassword } = wallet;
+        const params = {
+            tablename: "blockchain_wallet",
+            columns: ['wallet_user_id', 'wallet_account', 'wallet_alias', 'wallet_status', 'wallet_mnemonic', 'wallet_address', 'wallet_password'],
+            newValues: [userId, `'${walletAccount}'`, `'${walletAlias}'`, `'${walletStatus}'`, `'${walletMnemonic}'`,`'${walletAddress}'`, `'${walletPassword}'`]
+        };
+        const { responseCode } = await SQLFunctions.insertQuery(params);
+        if (responseCode === 0) {
+            return {
+                user_id: userId, 
+                wallet_account: walletAccount, 
+                wallet_alias: walletAlias, 
+                wallet_status: walletStatus, 
+                wallet_mnemonic: walletMnemonic,
+                wallet_address: walletAddress
+            };
+        }
+    
+        throw new APIError({
+            message: 'Creating wallet failed',
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+        });
+    }
 
     static async getByAddress(address) {
         let wallet;
@@ -94,31 +119,6 @@ class Wallet {
         throw new APIError(err);
     }
     
-    static async save(wallet) {
-        const { userId, walletAccount, walletAlias, walletStatus, walletMnemonic, walletAddress, walletPassword } = wallet;
-        const params = {
-            tablename: "blockchain_wallet",
-            columns: ['wallet_user_id', 'wallet_account', 'wallet_alias', 'wallet_status', 'wallet_mnemonic', 'wallet_address', 'wallet_password'],
-            newValues: [userId, `'${walletAccount}'`, `'${walletAlias}'`, `'${walletStatus}'`, `'${walletMnemonic}'`,`'${walletAddress}'`, `'${walletPassword}'`]
-        };
-        const { responseCode } = await SQLFunctions.insertQuery(params);
-        if (responseCode === 0) {
-            return {
-                user_id: userId, 
-                wallet_account: walletAccount, 
-                wallet_alias: walletAlias, 
-                wallet_status: walletStatus, 
-                wallet_mnemonic: walletMnemonic,
-                wallet_address: walletAddress
-            };
-        }
-    
-        throw new APIError({
-            message: 'Creating wallet failed',
-            status: httpStatus.INTERNAL_SERVER_ERROR,
-        });
-    }
-    
     static checkDuplicate(error) {
         if (error.message.includes('Violation of UNIQUE KEY constraint')) {
             return new APIError({
@@ -131,7 +131,7 @@ class Wallet {
     }
     
     static async getWalletsByUserId(options) {
-        const { userId, limit, offset, orderBy = "wallet_id" } = options;
+        const { userId, limit, offset, sortBy = "wallet_id", orderBy = "asc" } = options;
         let wallets, totalCount;
         if (userId) {
             const countParams = {
@@ -146,7 +146,8 @@ class Wallet {
                 condition: `wallet_user_id=${userId}`,
                 limit,
                 offset,
-                orderBy,
+                sortBy,
+                orderBy
             };
         
             const result = await Promise.all([

@@ -7,6 +7,47 @@ class Transaction {
     static STATUS_FAILED = 'f';
     static STATUS_SUCCESS = 's';
 
+    static async list(options){
+        const { limit, offset, condition = "1=1", sortBy = "tx_id", orderBy = "asc" } = options;
+        
+        const params = {
+            tablename: "blockchain_transaction", 
+            columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_created_at", "tx_updated_at"], 
+            condition,
+            sortBy,
+            orderBy,
+            limit,
+            offset
+        };
+
+        const countParams = {
+            tablename: "blockchain_transaction", // Changed to the correct table name
+            columns: ["COUNT(*) AS total"], 
+            condition: condition
+        };
+
+        try {
+            const result = await Promise.all([
+                SQLFunctions.selectQuery(countParams),
+                SQLFunctions.selectQueryMultiple(params),
+            ]);
+
+            const totalCount = result[0]?.data?.total || 0;
+            const transactions = result[1]?.data || [];
+
+            return {
+                transactions: transactions,
+                metadata: { count: totalCount }
+            };
+        } catch (error) {
+            const err = {
+                message: "Error retrieving transactions",
+                status: httpStatus.INTERNAL_SERVER_ERROR
+            };
+            throw new APIError(err);
+        }
+    }
+
     static async getTransactionById(id) {
         let transaction;
         if (id) {
@@ -58,7 +99,7 @@ class Transaction {
     }
 
     static async getBySenderAddr(options) {
-        const { address, limit, offset, orderBy = "tx_id" } = options;
+        const { address, limit, offset, sortBy = "tx_id", orderBy } = options;
         let transactions, totalCount;
         const err = { message: 'Error retrieving transactions' };
 
@@ -75,6 +116,7 @@ class Transaction {
                 condition: `tx_wallet_sender_address='${address}'`,
                 limit, 
                 offset, 
+                sortBy,
                 orderBy
             };
 

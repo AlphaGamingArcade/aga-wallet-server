@@ -25,7 +25,7 @@ exports.get = (req, res) => res.json(req.locals.game);
 /**
  * Get All Assets
  */
-exports.getGames = async (req, res, next) => {
+exports.list = async (req, res, next) => {
   try {
     const games = await getGames({
       limit: req.query.limit || DEFAULT_QUERY_LIMIT,

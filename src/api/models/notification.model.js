@@ -3,8 +3,49 @@ const APIError = require("../errors/api-error");
 const SQLFunctions = require("../utils/sqlFunctions");
 
 module.exports = class Notification {
-    static async getNotificationsByUserId(options) {
-        const { userId, limit, offset, orderBy = "notification_id" } = options;
+    static async list(options){
+        const { limit, offset, condition = "1=1", sortBy = "tx_id", orderBy = "asc" } = options;
+        
+        const params = {
+            tablename: "blockchain_notification", 
+            columns: ["notification_id", "notification_user_id", "notification_type", "notification_message", "notification_status", "notification_created_at", "notification_updated_at"], 
+            condition,
+            sortBy,
+            orderBy,
+            limit,
+            offset
+        };
+
+        const countParams = {
+            tablename: "blockchain_notification", // Changed to the correct table name
+            columns: ["COUNT(*) AS total"], 
+            condition: condition
+        };
+
+        try {
+            const result = await Promise.all([
+                SQLFunctions.selectQuery(countParams),
+                SQLFunctions.selectQueryMultiple(params),
+            ]);
+
+            const totalCount = result[0]?.data?.total || 0;
+            const notifications = result[1]?.data || [];
+
+            return {
+                notifications: notifications,
+                metadata: { count: totalCount }
+            };
+        } catch (error) {
+            const err = {
+                message: "Error retrieving transactions",
+                status: httpStatus.INTERNAL_SERVER_ERROR
+            };
+            throw new APIError(err);
+        }
+    }
+
+    static async getByUserId(options) {
+        const { userId, limit, offset, sortBy = "notification_id", orderBy = "asc" } = options;
         let notifications, totalCount, totalUnread;
         
         if (userId) {
@@ -30,6 +71,7 @@ module.exports = class Notification {
                 condition: `notification_user_id=${userId}`,
                 limit, 
                 offset, 
+                sortBy,
                 orderBy
             };
         
@@ -94,7 +136,7 @@ module.exports = class Notification {
     }
 
     static async getNotifications(options) {
-        const { limit, offset, orderBy = "notification_id" } = options;
+        const { limit, offset, sortBy = "notification_id" } = options;
         
         const countParams = {
             tablename: "blockchain_notification", 
@@ -112,7 +154,7 @@ module.exports = class Notification {
             condition: `1=1`,
             limit, 
             offset, 
-            orderBy
+            sortBy
         };
     
         const result = await Promise.all([

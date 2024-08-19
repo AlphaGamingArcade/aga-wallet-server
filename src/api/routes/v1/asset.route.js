@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const controller = require("../../controllers/asset.controller");
-const { authorize, LOGGED_USER } = require('../../middlewares/auth');
-const { getAsset } = require('../../validations/asset.validation');
+const { authorize } = require('../../middlewares/auth');
+const { getAsset, listAssets } = require('../../validations/asset.validation');
 const { validate } = require('express-validation');
 
 
@@ -12,7 +12,7 @@ const { validate } = require('express-validation');
 router.param('asset_id', controller.load);
 
 router.route('/')
-  .get(authorize(), controller.getAssets);
+  .get(authorize(), validate(listAssets), controller.list);
 
 router.route('/:asset_id')
   .get(authorize(), validate(getAsset), controller.get);
