@@ -12,9 +12,9 @@ const {
   updateUser,
   getUser,
 } = require('../../validations/user.validation');
-const { getNotification, deleteNotification, updateNotification, listNotifications } = require('../../validations/notification.validator');
+const { getUserNotification, deleteUserNotification, listUserNotifications, updateUserNotification } = require('../../validations/notification.validator');
 const { listWallets } = require('../../validations/wallet.validation');
-const { listMessagings } = require('../../validations/messaging.validation');
+const { listUserMessagings, getUserMessaging } = require('../../validations/messaging.validation');
 
 const router = express.Router();
 
@@ -23,6 +23,7 @@ const router = express.Router();
  */
 router.param('user_id', userController.load);
 router.param('notification_id', notificationController.load);
+router.param('messaging_id', messagingController.load);
 
 router
   .route('/')
@@ -49,24 +50,24 @@ router
  */
 router
   .route('/:user_id/notifications')
-  .get(authorize(LOGGED_USER), validate(listNotifications), notificationController.listUserNotifications);
+  .get(authorize(LOGGED_USER), validate(listUserNotifications), notificationController.listUserNotifications);
 
 router
   .route('/:user_id/notifications/:notification_id')
-  .get(authorize(LOGGED_USER), validate(getNotification), notificationController.get)
-  .delete(authorize(LOGGED_USER), validate(deleteNotification), notificationController.remove)
-  .patch(authorize(LOGGED_USER), validate(updateNotification), notificationController.patch);
+  .get(authorize(LOGGED_USER), validate(getUserNotification), notificationController.get)
+  .delete(authorize(LOGGED_USER), validate(deleteUserNotification), notificationController.remove)
+  .patch(authorize(LOGGED_USER), validate(updateUserNotification), notificationController.patch);
 
 /**
  * Messaging
  */
 router
   .route('/:user_id/messagings')
-  .get(authorize(LOGGED_USER), validate(listMessagings), messagingController.listUserMessagings);
+  .get(authorize(LOGGED_USER), validate(listUserMessagings), messagingController.listUserMessagings);
 
-// router
-//   .route('/:user_id/notifications/:notification_id')
-//   .get(authorize(LOGGED_USER), validate(getNotification), notificationController.get)
+router
+  .route('/:user_id/messagings/:messaging_id')
+  .get(authorize(LOGGED_USER), validate(getUserMessaging), messagingController.get)
 //   .delete(authorize(LOGGED_USER), validate(deleteNotification), notificationController.remove)
 //   .patch(authorize(LOGGED_USER), validate(updateNotification), notificationController.patch);
 

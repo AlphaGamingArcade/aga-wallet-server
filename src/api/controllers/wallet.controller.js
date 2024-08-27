@@ -18,7 +18,7 @@ exports.load = async (req, res, next, address) => {
   try {
     const wallet = await Wallet.getByAddress(address);
     const data = await getWalletBalance(address);
-    req.locals = { wallet: { ...wallet, ...data } };
+    req.locals = { wallet, ...data };
     return next();
   } catch (error) {
     return next(error);

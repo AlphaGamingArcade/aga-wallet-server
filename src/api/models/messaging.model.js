@@ -52,11 +52,11 @@ class Messaging {
         columns: ["messaging_id", "messaging_user_id", "messaging_token", "messaging_status", "messaging_created_at", "messaging_updated_at"],
         condition: `messaging_id=${id}`
       };
-      asset = await SQLFunctions.selectQuery(params);
+      messaging = await SQLFunctions.selectQuery(params);
     }
 
     if (messaging?.data) {
-      return asset.data;
+      return messaging.data;
     }
 
     throw new APIError({

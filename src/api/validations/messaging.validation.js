@@ -4,10 +4,17 @@ module.exports = {
     // GET /v1/game/:game_id
     getMessaging: {
         params: Joi.object({
-            game_id: Joi.number().required()
+            messaging_id: Joi.number().required()
         })
     },
-    registerMessaging: {
+    // GET /v1/game/:game_id
+    getUserMessaging: {
+        params: Joi.object({
+            user_id: Joi.number().required(),
+            messaging_id: Joi.number().required()
+        })
+    },
+    registerUserMessaging: {
         query: Joi.object({
             limit: Joi.number().optional(),
             offset: Joi.number().optional(),
@@ -16,7 +23,7 @@ module.exports = {
             genre: Joi.string().regex(/^[A-Za-z_ ]+$/).optional()
         }),
     },
-    updateMessaging: {
+    updateUserMessaging: {
         query: Joi.object({
             limit: Joi.number().optional(),
             offset: Joi.number().optional(),
@@ -25,7 +32,7 @@ module.exports = {
             genre: Joi.string().regex(/^[A-Za-z_ ]+$/).optional()
         }),
     },
-    replaceMessaging: {
+    replaceUserMessaging: {
         query: Joi.object({
             limit: Joi.number().optional(),
             offset: Joi.number().optional(),
@@ -34,7 +41,7 @@ module.exports = {
             genre: Joi.string().regex(/^[A-Za-z_ ]+$/).optional()
         }),
     },
-    listMessagings: {
+    listUserMessagings: {
         query: Joi.object({
             limit: Joi.number().optional(),
             offset: Joi.number().optional(),

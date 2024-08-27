@@ -10,7 +10,7 @@ const Asset = require("../models/asset.model");
 exports.load = async (req, res, next, assetId) => {
     try {
       const asset = await  Asset.getById(assetId);
-      req.locals = { asset: { ...asset } };
+      req.locals = { asset };
       return next();
     } catch (error) {
       return next(error);

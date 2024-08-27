@@ -10,7 +10,7 @@ const Game = require("../models/game.model");
 exports.load = async (req, res, next, gameId) => {
     try {
       const game = await getGameById(gameId);
-      req.locals = { game: { ...game } };
+      req.locals = { game };
       return next();
     } catch (error) {
       return next(error);

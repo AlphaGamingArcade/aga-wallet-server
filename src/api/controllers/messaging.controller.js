@@ -10,7 +10,7 @@ const Game = require("../models/game.model");
 exports.load = async (req, res, next, id) => {
     try {
       const messaging = await Messaging.getById(id);
-      req.locals = messaging;
+      req.locals = { messaging }
       return next();
     } catch (error) {
       return next(error);
@@ -21,7 +21,7 @@ exports.load = async (req, res, next, id) => {
  * Get asset
  * @public
  */
-exports.get = (req, res) => res.json(req.locals.game);
+exports.get = (req, res) => res.json(req.locals.messaging);
 
 /**
  * Register messaging

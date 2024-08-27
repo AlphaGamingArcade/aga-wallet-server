@@ -9,7 +9,7 @@ const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constant
 exports.load = async (req, res, next, id) => {
     try {
       const notification = await Notification.getNotificationById(id);
-      req.locals = { notification: { ...notification } };
+      req.locals = { notification };
       return next();
     } catch (error) {
       return next(error);
