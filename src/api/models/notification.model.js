@@ -7,7 +7,7 @@ module.exports = class Notification {
         const { limit, offset, condition = "1=1", sortBy = "tx_id", orderBy = "asc" } = options;
         
         const params = {
-            tablename: "blockchain_notification", 
+            tablename: "blockchain_notification",
             columns: ["notification_id", "notification_user_id", "notification_type", "notification_message", "notification_status", "notification_created_at", "notification_updated_at"], 
             condition,
             sortBy,

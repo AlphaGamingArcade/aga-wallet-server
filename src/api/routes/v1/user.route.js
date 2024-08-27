@@ -3,6 +3,7 @@ const { validate } = require('express-validation');
 const userController = require('../../controllers/user.controller');
 const notificationController = require('../../controllers/notification.controller')
 const walletController = require('../../controllers/wallet.controller')
+const messagingController = require('../../controllers/messaging.controller')
 const { authorize, ADMIN, LOGGED_USER } = require('../../middlewares/auth');
 const {
   listUsers,
@@ -13,6 +14,7 @@ const {
 } = require('../../validations/user.validation');
 const { getNotification, deleteNotification, updateNotification, listNotifications } = require('../../validations/notification.validator');
 const { listWallets } = require('../../validations/wallet.validation');
+const { listMessagings } = require('../../validations/messaging.validation');
 
 const router = express.Router();
 
@@ -54,5 +56,19 @@ router
   .get(authorize(LOGGED_USER), validate(getNotification), notificationController.get)
   .delete(authorize(LOGGED_USER), validate(deleteNotification), notificationController.remove)
   .patch(authorize(LOGGED_USER), validate(updateNotification), notificationController.patch);
+
+/**
+ * Messaging
+ */
+router
+  .route('/:user_id/messagings')
+  .get(authorize(LOGGED_USER), validate(listMessagings), messagingController.listUserMessagings);
+
+// router
+//   .route('/:user_id/notifications/:notification_id')
+//   .get(authorize(LOGGED_USER), validate(getNotification), notificationController.get)
+//   .delete(authorize(LOGGED_USER), validate(deleteNotification), notificationController.remove)
+//   .patch(authorize(LOGGED_USER), validate(updateNotification), notificationController.patch);
+
 
 module.exports = router;
