@@ -96,8 +96,8 @@ CREATE TABLE blockchain_game (
 
 CREATE TABLE blockchain_messaging (
     messaging_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
-    messaging_user_id VARCHAR(50) NOT NULL,
-    messaging_token VARCHAR(250) NOT NULL,
+    messaging_user_id INT NOT NULL,
+    messaging_token VARCHAR(250) NOT NULL UNIQUE,
     messaging_status CHAR(1) NOT NULL,
     messaging_created_at DATETIME DEFAULT GETDATE(),
     messaging_updated_at DATETIME DEFAULT GETDATE()

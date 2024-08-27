@@ -2,7 +2,27 @@ const httpStatus = require("http-status");
 const APIError = require("../errors/api-error");
 const SQLFunctions = require("../utils/sqlFunctions");
 
+
 class Messaging {
+  static async save(messaging) {
+    const { userId, token, status = 'a' } = messaging;
+    const params = {
+        tablename: "blockchain_messaging",
+        columns: ['messaging_user_id', 'messaging_token', 'messaging_status'],
+        newValues: [userId, `'${token}'`, `'${status}'`]
+    };
+    const { responseCode } = await SQLFunctions.insertQuery(params);
+    if (responseCode === 0) {
+        return {
+            message: "Messaging added successfully"
+        };
+    }
+
+    throw new APIError({
+        message: 'Creating messaging failed',
+        status: httpStatus.INTERNAL_SERVER_ERROR,
+    });
+  }
   static async list(options){
       const { limit, offset, condition = "1=1", sortBy = "messaging_id", orderBy = "asc" } = options;
       
@@ -64,6 +84,17 @@ class Messaging {
       status: httpStatus.NOT_FOUND,
     });
   }
+  static checkDuplicateMessaging = (error) =>{
+    if (error.message.includes('Violation of UNIQUE KEY constraint')) {
+        return new APIError({
+            message: 'Messaging already exist',
+            status: httpStatus.CONFLICT,
+            isPublic: true
+          });
+    }
+    return error;
+  }
+  
 }
 
 module.exports = Messaging;

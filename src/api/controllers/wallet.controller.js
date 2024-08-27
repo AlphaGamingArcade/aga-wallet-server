@@ -1,5 +1,4 @@
 const httpStatus = require("http-status");
-const { findUserById } = require("../models/user.model");
 const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
 const { env } = require("../../config/vars");
@@ -37,7 +36,7 @@ exports.get = (req, res) => res.json(req.locals.wallet);
  */
 exports.create = async (req, res, next) => {
   try {
-    const user = await findUserById(req.user.user_id);
+    const userId = req.user.user_id;
     const keyring = new Keyring({ type: 'sr25519' });
     const mnemonic = mnemonicGenerate();
     const pair = keyring.createFromUri(mnemonic);
@@ -48,7 +47,7 @@ exports.create = async (req, res, next) => {
     password = hash;
 
     const wallet = await Wallet.save({
-      userId: user.user_id, 
+      userId, 
       walletAccount: req.body.account_id, 
       walletAlias: "", 
       walletStatus: Wallet.STATUS_ACTIVE, 

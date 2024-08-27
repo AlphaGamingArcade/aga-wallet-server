@@ -26,14 +26,21 @@ exports.get = (req, res) => res.json(req.locals.messaging);
 /**
  * Register messaging
  */
-exports.register = async (req, res, next) => {
+exports.create = async (req, res, next) => {
   try {
-    const messaging = {}
+    const userId = req.user.user_id;
+    const token = req.body.messaging_token;
+
+    const messaging = await Messaging.save({
+      userId,
+      token,
+      status: 'a'
+    });
 
     res.status(httpStatus.OK);
     return res.json(messaging);
   } catch (error) {
-    return next(error)
+    return next(Messaging.checkDuplicateMessaging(error))
   }
 }
 
@@ -64,6 +71,28 @@ exports.replace = async (req, res, next) => {
     return next(error)
   }
 }
+
+
+/**
+ * Gets all messagings
+ * @public
+ */
+exports.list = async (req, res, next) => {
+  try {
+    const { query } = req
+    const messagings = await Messaging.list({
+      condition: "1=1",
+      sortBy: query.sort_by || "messaging_id", 
+      orderBy: query.order_by || "asc",
+      limit: query.limit || DEFAULT_QUERY_LIMIT,
+      offset: query.offset || DEFAULT_QUERY_OFFSET
+    });
+    res.status(httpStatus.OK);
+    return res.json(messagings);
+  } catch (error) {
+    next(error)
+  }
+};
 
 exports.listUserMessagings = async (req, res, next) => {
   try {
