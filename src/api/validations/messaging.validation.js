@@ -10,7 +10,6 @@ module.exports = {
     // POST /v1/messagings
     createMessaging: {
         body: Joi.object({
-            messaging_user_id: Joi.number().required(),
             messaging_token: Joi.string().required()
         })
     },

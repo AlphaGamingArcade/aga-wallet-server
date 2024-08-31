@@ -3,6 +3,57 @@ const APIError = require("../errors/api-error");
 const SQLFunctions = require("../utils/sqlFunctions");
 
 module.exports = class Notification {
+    static async save(notification) {
+        const { userId, type, message, status } = notification;
+        const params = {
+            tablename: 'blockchain_notification',
+            columns: ['notification_user_id', 'notification_type','notification_message', 'notification_status'],
+            newValues: [`'${userId}'`, `'${type}'`,`'${message}'`, `'${status}'`]
+        };
+        const { responseCode } = await SQLFunctions.insertQuery(params);
+        
+        if (responseCode === 0) {
+            return { message: "Notification added successfully" };
+        }
+    
+        throw new APIError({
+            message: 'Creating notification failed',
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+        });
+    }
+
+    static async saveList({ notifications }) {
+        if (!Array.isArray(notifications) || notifications.length === 0) {
+            throw new APIError({
+                message: 'Notification list is empty or not provided',
+                status: httpStatus.BAD_REQUEST,
+            });
+        }
+
+        const multipleValues = notifications.map(notification => {
+            const { userId, type, message, status } = notification;
+            return [`'${userId}'`, `'${type}'`, `'${message}'`, `'${status}'`];
+        })
+
+        const { responseCode } = await SQLFunctions.insertQueryMultiple(params);
+        
+        if (responseCode === 0) {
+            return {
+                senderAddress, 
+                recipientAddress, 
+                amount,
+                status,
+                txHash,
+                blockHash
+            };
+        }
+    
+        throw new APIError({
+            message: 'Creating transaction failed',
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+        });
+    }
+
     static async list(options){
         const { limit, offset, condition = "1=1", sortBy = "tx_id", orderBy = "asc" } = options;
         

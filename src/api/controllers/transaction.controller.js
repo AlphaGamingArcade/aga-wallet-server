@@ -2,6 +2,7 @@ const httpStatus = require("http-status");
 const { transferAsset, convertToPlanks, getTransactionDetails } = require("../services/chainProvider");
 
 const Transaction = require("../models/transaction.model")
+const Notification = require("../models/notification.model")
 const Wallet = require("../models/wallet.model"); 
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
 
@@ -53,6 +54,10 @@ exports.send = async (req, res, next) => {
       blockHash: transaction.block_hash,
       txHash: transaction.transaction_hash
     });
+    
+    await Notification.saveList([
+
+    ])
 
     res.status(httpStatus.CREATED);
     return res.json(transaction);   
