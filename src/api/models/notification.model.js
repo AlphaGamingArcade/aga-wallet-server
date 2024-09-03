@@ -23,13 +23,6 @@ module.exports = class Notification {
     }
 
     static async saveList({ notifications }) {
-        if (!Array.isArray(notifications) || notifications.length === 0) {
-            throw new APIError({
-                message: 'Notification list is empty or not provided',
-                status: httpStatus.BAD_REQUEST,
-            });
-        }
-
         const multipleValues = notifications.map(notification => {
             const { userId, type, message, status } = notification;
             return [`'${userId}'`, `'${type}'`, `'${message}'`, `'${status}'`];

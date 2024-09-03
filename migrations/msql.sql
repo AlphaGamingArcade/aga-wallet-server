@@ -102,3 +102,15 @@ CREATE TABLE blockchain_messaging (
     messaging_created_at DATETIME DEFAULT GETDATE(),
     messaging_updated_at DATETIME DEFAULT GETDATE()
 )
+
+CREATE TABLE blockchain_account (
+    account_id INT IDENTITY(1, 1) PRIMARY KEY,
+    account_user_id INT NOT NULL,
+    account_alias VARCHAR(128) NULL,
+    account_status CHAR(1) NOT NULL, -- A for active, I for inactive
+    account_mnemonic VARCHAR(256) NOT NULL UNIQUE, -- Increased size for mnemonic
+    account_address VARCHAR(256) NOT NULL UNIQUE,
+    account_password VARCHAR(256) NOT NULL, -- Increased size for password
+    account_created_at DATETIME DEFAULT GETDATE(),
+    account_updated_at DATETIME DEFAULT GETDATE()
+);

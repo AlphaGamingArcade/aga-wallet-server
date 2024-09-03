@@ -3,6 +3,7 @@ const { validate } = require('express-validation');
 const controller = require('../../controllers/transaction.controller');
 const { sendTransaction, getTransaction } = require('../../validations/transaction.validation');
 const { authorize } = require('../../middlewares/auth');
+const { authorizeCloudMessaging } = require('../../middlewares/cloudMessaging');
 
 const router = express.Router();
 
@@ -16,6 +17,6 @@ router.route('/:transaction_hash')
 
 router
   .route('/send')
-  .post(authorize(), validate(sendTransaction), controller.send)
+  .post(authorize(), validate(sendTransaction), authorizeCloudMessaging(), controller.send)
 
 module.exports = router;

@@ -49,7 +49,6 @@ class Wallet {
             throw new APIError(err);
         }
     }
-
         
     static async save(wallet) {
         const { userId, walletAccount, walletAlias, walletStatus, walletMnemonic, walletAddress, walletPassword } = wallet;

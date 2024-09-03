@@ -1,6 +1,5 @@
 const httpStatus = require("http-status");
-const { transferAsset, convertToPlanks, getTransactionDetails } = require("../services/chainProvider");
-
+const { convertToPlanks, getTransactionDetails, substrateTransferAsset } = require("../services/chainProvider");
 const Transaction = require("../models/transaction.model")
 const Notification = require("../models/notification.model")
 const Wallet = require("../models/wallet.model"); 
@@ -39,13 +38,13 @@ exports.send = async (req, res, next) => {
     const senderAddress = req.body.sender_address;
     const recipientAddress = req.body.recipient_address;
     const transferAmount = convertToPlanks(req.body.amount);
-    const transaction = await transferAsset({
+    const transaction = await substrateTransferAsset({
       senderMnemonic, 
       senderAddress,
       recipientAddress, 
       amount: transferAmount
     });
-    
+
     await Transaction.save({
       senderAddress: req.body.sender_address,
       recipientAddress: recipientAddress,
@@ -54,10 +53,19 @@ exports.send = async (req, res, next) => {
       blockHash: transaction.block_hash,
       txHash: transaction.transaction_hash
     });
-    
-    await Notification.saveList([
 
-    ])
+    // Send Notification
+    if(transaction.success && req.messaging.messaging_token){
+      const message = {
+        data: { score: '850', time: transaction.timestamp },
+        notification: {
+            title: `Asset received`,
+            body: `Received ${req.body.amount} AGA from ${req.body.sender_address}`
+        },
+        token: req.messaging.messaging_token
+      }
+      res.cloudMessaging(message);
+    }
 
     res.status(httpStatus.CREATED);
     return res.json(transaction);   

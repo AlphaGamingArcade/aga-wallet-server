@@ -84,6 +84,26 @@ class Messaging {
       status: httpStatus.NOT_FOUND,
     });
   }
+  static async getByUserId(userId) {
+    let messaging;
+    if (userId) {
+      const params = {
+        tablename: "blockchain_messaging",
+        columns: ["messaging_id", "messaging_user_id", "messaging_token", "messaging_status", "messaging_created_at", "messaging_updated_at"],
+        condition: `messaging_user_id=${userId}`
+      };
+      messaging = await SQLFunctions.selectQuery(params);
+    }
+
+    if (messaging?.data) {
+      return messaging.data;
+    }
+
+    throw new APIError({
+      message: 'Messaging does not exist',
+      status: httpStatus.NOT_FOUND,
+    });
+  }
   static checkDuplicateMessaging = (error) =>{
     if (error.message.includes('Violation of UNIQUE KEY constraint')) {
         return new APIError({

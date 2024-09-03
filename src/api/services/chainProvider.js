@@ -16,7 +16,7 @@ exports.convertPlanckToDecimal = (amountInPlanck) => {
     return Number(amountInPlanck) / plancksPerDot;
 }  
 
-exports.transferAsset = async (transferAssetObject) => {
+exports.substrateTransferAsset = async (transferAssetObject) => {
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
     const { senderMnemonic, senderAddress, recipientAddress, amount } = transferAssetObject;
@@ -25,6 +25,7 @@ exports.transferAsset = async (transferAssetObject) => {
         const keyring = new Keyring({ type: 'sr25519' });
         const sender = keyring.addFromMnemonic(senderMnemonic);
         const { nonce } = await api.query.system.account(sender.address);
+        const timestamp = await api.query.timestamp.now();
         const transfer = api.tx.balances.transferAllowDeath(recipientAddress, BigInt(amount));
         
         // Ensure the sender address matches the derived address from the mnemonic
@@ -60,6 +61,7 @@ exports.transferAsset = async (transferAssetObject) => {
                         message: `Transaction included in block: ${status.asInBlock.toHex()}`,
                         block_hash: status.asInBlock.toHex(),
                         transaction_hash: transfer.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
                         success: true
                     });
                 } else {
@@ -67,6 +69,7 @@ exports.transferAsset = async (transferAssetObject) => {
                         message: `Transaction failed: ${errorMsg}`,
                         block_hash: status.asInBlock.toHex(),
                         transaction_hash: transfer.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
                         success: false
                     });
                 }
@@ -75,6 +78,7 @@ exports.transferAsset = async (transferAssetObject) => {
                     message: `Transaction finalized in block: ${status.asFinalized.toHex()}`,
                     block_hash: status.asFinalized.toHex(),
                     transaction_hash: transfer.hash.toHex(),
+                    timestamp: timestamp.toNumber().toString(),
                     success: true
                 });
             }

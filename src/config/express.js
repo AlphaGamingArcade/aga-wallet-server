@@ -11,12 +11,16 @@ const { logs } = require('./vars');
 const strategies = require('./passport');
 const error = require('../api/middlewares/error');
 const path = require('path')
+const { cloudMessaging } = require('./../api/middlewares/cloudMessaging');
 
 /**
 * Express instance
 * @public
 */
 const app = express();
+
+// Add Cloud messaging from firebase
+app.use(cloudMessaging)
 
 // request logging. dev: console | production: file
 app.use(morgan(logs));
