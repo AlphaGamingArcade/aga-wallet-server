@@ -1,8 +1,8 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { Keyring } = require('@polkadot/keyring');
-const { provider } = require('../../config/vars');
+const { provider } = require('../../../config/vars');
 const httpStatus = require('http-status');
-const APIError = require('../errors/api-error');
+const APIError = require('../../errors/api-error');
 const BigNumber = require('bignumber.js');
 
 exports.convertToPlanks = (amountPerUnit) => {
@@ -177,6 +177,34 @@ exports.getWalletsBalance = async (addresses) => {
 }
 
 exports.getWalletBalance = async (address) => {
+    const wsProvider = new WsProvider(provider)
+    const api = await ApiPromise.create({ provider: wsProvider });
+    try {
+        // Retrieve the account balance & nonce via the system module
+        const { data } = await api.query.system.account(address);
+        const balance = data.toJSON();
+        const readableBalance = {
+            free: this.convertPlanckToDecimal(Number(new BigNumber(balance.free))),
+            reserved: this.convertPlanckToDecimal(Number(new BigNumber(balance.reserved))),
+            miscFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
+            feeFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
+        };
+        return {
+            accountAddress: address,
+            tokenSymbol: "AGA",
+            ...readableBalance
+        }
+    } catch (error) {
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message,
+        });
+    } finally {
+        await api.disconnect();
+    }
+}
+
+exports.getAccountBalance = async (address) => {
     const wsProvider = new WsProvider(provider)
     const api = await ApiPromise.create({ provider: wsProvider });
     try {

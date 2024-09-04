@@ -2,6 +2,7 @@ const express = require('express');
 const userRoutes = require('./user.route');
 const authRoutes = require('./auth.route');
 const walletRoutes = require("./wallet.route");
+const accountRoutes = require("./account.route");
 const transactionRoutes = require("./transactions.route")
 const assetRoutes = require("./asset.route")
 const notificationRoutes = require("./notification.route")

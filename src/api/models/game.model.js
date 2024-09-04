@@ -7,7 +7,7 @@ class Game {
       const { limit, offset, condition = "1=1", sortBy = "game_id", orderBy = "asc" } = options;
       
       const params = {
-          tablename: "blockchain_game", 
+          tablename: "wallet_game", 
           columns: ["game_id", "game_name", "game_image", "game_genre", "game_url", "game_status", "game_players", "game_created_at", "game_updated_at"], 
           condition,
           sortBy,
@@ -17,7 +17,7 @@ class Game {
       };
 
       const countParams = {
-          tablename: "blockchain_game", // Changed to the correct table name
+          tablename: "wallet_game", // Changed to the correct table name
           columns: ["COUNT(*) AS total"], 
           condition: condition
       };
@@ -48,7 +48,7 @@ class Game {
     const { limit, offset, condition = "1=1", sortBy = "game_genre", orderBy = "asc" } = options;
     
     const params = {
-        tablename: "blockchain_game", 
+        tablename: "wallet_game", 
         columns: ["DISTINCT game_genre"], 
         condition,
         sortBy,
@@ -58,7 +58,7 @@ class Game {
     };
 
     const countParams = {
-        tablename: "blockchain_game",
+        tablename: "wallet_game",
         columns: ["COUNT(DISTINCT game_genre) AS total"], 
         condition
     };
@@ -89,7 +89,7 @@ class Game {
     let asset;
     if (id) {
       const params = {
-        tablename: "blockchain_game",
+        tablename: "wallet_game",
         columns: ["game_id", "game_name", "game_image", "game_url", "game_status", "game_players", "game_created_at", "game_updated_at"],
         condition: `game_id=${id}`
       };
@@ -111,19 +111,19 @@ class Game {
     const err = { message: 'Error retrieving games' };
 
     const distinctParams = {
-      tablename: "blockchain_game",
+      tablename: "wallet_game",
       columns: ["game_genre"],
       condition: `1=1`
     };
 
     const countParams = {
-      tablename: "blockchain_game",
+      tablename: "wallet_game",
       columns: ["COUNT(*) AS total"],
       condition: `1=1`
     };
 
     const params = {
-      tablename: "blockchain_game",
+      tablename: "wallet_game",
       columns: ["game_id", "game_name", "game_image", "game_url", "game_status", "game_players", "game_created_at", "game_updated_at"],
       condition: `1=1`,
       limit,

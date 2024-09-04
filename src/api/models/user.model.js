@@ -23,7 +23,7 @@ exports.findUserById = async (id) => {
     let user;
     if(id){
         const params = {
-            tablename: "blockchain_user", 
+            tablename: "wallet_user", 
             columns: ["user_id, user_email, user_name, user_services, user_role, user_picture"], 
             condition: `user_id=${id}`
         }
@@ -42,7 +42,7 @@ exports.findUserByEmail = async (email) => {
     let user;
     if(email){
         const params = {
-            tablename: "blockchain_user", 
+            tablename: "wallet_user", 
             columns: ["user_id, user_email, user_name, user_services, user_role, user_picture"], 
             condition: `user_email='${email}'`
         }
@@ -61,7 +61,7 @@ exports.saveUser = async (user) => {
     let { email, password, name, services, role, picture } = user;
 
     const params = {
-        tablename: "blockchain_user",
+        tablename: "wallet_user",
         columns: ['user_email', 'user_password', 'user_name', 'user_services', 'user_role', 'user_picture'],
         newValues: [`'${email}'`, `'${password}'`, `'${name}'`, `'${services}'`, `'${role}'`, `'${picture}'`]
     }
@@ -70,7 +70,7 @@ exports.saveUser = async (user) => {
     if(responseCode == 0 && email){
         let user;
         const params = {
-            tablename: "blockchain_user", 
+            tablename: "wallet_user", 
             columns: ["user_id, user_email, user_name, user_services, user_role"], 
             condition: `user_email='${email}'`
         }
@@ -103,7 +103,7 @@ exports.findAndGenerateToken = async (options) => {
     if (!email) throw new APIError({ message: 'An email is required to generate a token' });
 
     let params = {
-        tablename: "blockchain_user", 
+        tablename: "wallet_user", 
         columns: ["user_id", "user_email", "user_password", "user_name", "user_role", "user_picture"], 
         condition: `user_email='${email}'`
     };
@@ -138,7 +138,7 @@ exports.oAuthLogin = async ({
     service, id, email, name, picture,
   }) => {
     const params = {
-        tablename: "blockchain_user", 
+        tablename: "wallet_user", 
         columns: ["user_id, user_email, user_name, user_services, user_role, user_picture"], 
         condition: `user_email='${email}'`
     }
@@ -151,7 +151,7 @@ exports.oAuthLogin = async ({
       if (!user.data.user_picture) user.data.user_picture = picture;
 
       const params = {
-        tablename: "blockchain_user",
+        tablename: "wallet_user",
         newValues: [`user_name='${name}'`,`user_services='${JSON.stringify(parsedUserServices)}'`, `user_picture='${picture}'`],
         condition: `user_email='${email}'`
       }
@@ -161,7 +161,7 @@ exports.oAuthLogin = async ({
       if(responseCode == 0 ){
         let user;
         const params = {
-            tablename: "blockchain_user", 
+            tablename: "wallet_user", 
             columns: ["user_id, user_email, user_name, user_services, user_role"], 
             condition: `user_email='${email}'`
         }
@@ -187,7 +187,7 @@ exports.oAuthLogin = async ({
 
     const password = v4();
     const params2 = {
-        tablename: "blockchain_user",
+        tablename: "wallet_user",
         columns: ["user_email, user_password, user_name, user_services, user_role, user_picture"],
         newValues: [`'${email}'`, `'${password}'`,`'${name}'`, `'${JSON.stringify({[service]: id})}'`,`'${ROLE_USER}'`, `'${picture}'`]
     }
@@ -196,7 +196,7 @@ exports.oAuthLogin = async ({
     if(responseCode == 0){
         let user;
         const params = {
-            tablename: "blockchain_user", 
+            tablename: "wallet_user", 
             columns: ["user_id, user_email, user_name, user_services, user_role"], 
             condition: `user_email='${email}'`
         }

@@ -1,9 +1,11 @@
 const express = require('express');
 const { validate } = require('express-validation');
 const userController = require('../../controllers/user.controller');
-const notificationController = require('../../controllers/notification.controller')
-const walletController = require('../../controllers/wallet.controller')
-const messagingController = require('../../controllers/messaging.controller')
+const notificationController = require('../../controllers/notification.controller');
+const walletController = require('../../controllers/wallet.controller');
+const messagingController = require('../../controllers/messaging.controller');
+const accountController = require('../../controllers/account.controller')
+
 const { authorize, ADMIN, LOGGED_USER } = require('../../middlewares/auth');
 const {
   listUsers,
@@ -15,6 +17,7 @@ const {
 const { getUserNotification, deleteUserNotification, listUserNotifications, updateUserNotification } = require('../../validations/notification.validator');
 const { listWallets } = require('../../validations/wallet.validation');
 const { listUserMessagings, getUserMessaging } = require('../../validations/messaging.validation');
+const { listUserAccounts, getUserAccount, createUserAccount } = require('../../validations/account.validation');
 
 const router = express.Router();
 
@@ -24,6 +27,7 @@ const router = express.Router();
 router.param('user_id', userController.load);
 router.param('notification_id', notificationController.load);
 router.param('messaging_id', messagingController.load);
+router.param('account_id', accountController.load);
 
 router
   .route('/')
@@ -46,7 +50,7 @@ router
   .get(authorize(LOGGED_USER), validate(listWallets), walletController.listUserWallets);
 
 /**
- * NOTIFICATIONS
+ * User notifications
  */
 router
   .route('/:user_id/notifications')
@@ -59,7 +63,7 @@ router
   .patch(authorize(LOGGED_USER), validate(updateUserNotification), notificationController.patch);
 
 /**
- * Messaging
+ * User Messagings
  */
 router
   .route('/:user_id/messagings')
@@ -68,8 +72,17 @@ router
 router
   .route('/:user_id/messagings/:messaging_id')
   .get(authorize(LOGGED_USER), validate(getUserMessaging), messagingController.get)
-//   .delete(authorize(LOGGED_USER), validate(deleteNotification), notificationController.remove)
-//   .patch(authorize(LOGGED_USER), validate(updateNotification), notificationController.patch);
 
+/**
+ * User Accounts
+ */
+router
+  .route('/:user_id/accounts')
+  .get(authorize(LOGGED_USER), validate(listUserAccounts), accountController.listUserAccounts)
+  .post(authorize(LOGGED_USER), validate(createUserAccount), accountController.create);
+
+router
+  .route('/:user_id/accounts/:account_id')
+  .get(authorize(LOGGED_USER), validate(getUserAccount), accountController.get);
 
 module.exports = router;

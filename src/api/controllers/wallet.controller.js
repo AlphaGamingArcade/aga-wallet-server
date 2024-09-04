@@ -3,7 +3,7 @@ const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
 const { env } = require("../../config/vars");
 const bcrypt = require("bcryptjs");
-const { getWalletBalance, getWalletsBalance } = require("../services/chainProvider");
+const { getWalletBalance, getWalletsBalance } = require("../services/chains/agaProvider");
 const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require("../utils/constants");
 
 const Wallet = require("../models/wallet.model");

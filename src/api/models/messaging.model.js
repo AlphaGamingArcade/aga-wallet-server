@@ -7,7 +7,7 @@ class Messaging {
   static async save(messaging) {
     const { userId, token, status = 'a' } = messaging;
     const params = {
-        tablename: "blockchain_messaging",
+        tablename: "wallet_messaging",
         columns: ['messaging_user_id', 'messaging_token', 'messaging_status'],
         newValues: [userId, `'${token}'`, `'${status}'`]
     };
@@ -27,7 +27,7 @@ class Messaging {
       const { limit, offset, condition = "1=1", sortBy = "messaging_id", orderBy = "asc" } = options;
       
       const params = {
-          tablename: "blockchain_messaging", 
+          tablename: "wallet_messaging", 
           columns: ["messaging_id", "messaging_user_id", "messaging_token", "messaging_status", "messaging_created_at", "messaging_updated_at"], 
           condition,
           sortBy,
@@ -37,7 +37,7 @@ class Messaging {
       };
 
       const countParams = {
-          tablename: "blockchain_messaging", // Changed to the correct table name
+          tablename: "wallet_messaging", // Changed to the correct table name
           columns: ["COUNT(*) AS total"], 
           condition: condition
       };
@@ -68,7 +68,7 @@ class Messaging {
     let messaging;
     if (id) {
       const params = {
-        tablename: "blockchain_messaging",
+        tablename: "wallet_messaging",
         columns: ["messaging_id", "messaging_user_id", "messaging_token", "messaging_status", "messaging_created_at", "messaging_updated_at"],
         condition: `messaging_id=${id}`
       };
@@ -88,7 +88,7 @@ class Messaging {
     let messaging;
     if (userId) {
       const params = {
-        tablename: "blockchain_messaging",
+        tablename: "wallet_messaging",
         columns: ["messaging_id", "messaging_user_id", "messaging_token", "messaging_status", "messaging_created_at", "messaging_updated_at"],
         condition: `messaging_user_id=${userId}`
       };

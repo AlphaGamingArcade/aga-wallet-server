@@ -11,7 +11,7 @@ class Transaction {
         const { limit, offset, condition = "1=1", sortBy = "tx_id", orderBy = "asc" } = options;
         
         const params = {
-            tablename: "blockchain_transaction", 
+            tablename: "wallet_transaction", 
             columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_created_at", "tx_updated_at"], 
             condition,
             sortBy,
@@ -21,7 +21,7 @@ class Transaction {
         };
 
         const countParams = {
-            tablename: "blockchain_transaction", // Changed to the correct table name
+            tablename: "wallet_transaction", // Changed to the correct table name
             columns: ["COUNT(*) AS total"], 
             condition: condition
         };
@@ -52,7 +52,7 @@ class Transaction {
         let transaction;
         if (id) {
             const params = {
-                tablename: "blockchain_transaction", 
+                tablename: "wallet_transaction", 
                 columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_created_at", "tx_updated_at"], 
                 condition: `tx_id=${id}`
             };
@@ -72,7 +72,7 @@ class Transaction {
     static async save(transaction) {
         const { senderAddress, recipientAddress, amount, status, txHash, blockHash } = transaction;
         const params = {
-            tablename: 'blockchain_transaction',
+            tablename: 'wallet_transaction',
             columns: ['tx_wallet_sender_address', 'tx_wallet_recipient_address', 'tx_amount', 'tx_hash', 'tx_type', 'tx_block_hash', 'tx_status'],
             multipleValues: [
               [`'${senderAddress}'`, `'${recipientAddress}'`, amount, `'${txHash}'`,`'t'`, `'${blockHash}'`, `'${status}'`], // TRANSFER
@@ -105,13 +105,13 @@ class Transaction {
 
         if (address) {
             const countParams = {
-                tablename: "blockchain_transaction", 
+                tablename: "wallet_transaction", 
                 columns: ["COUNT(*) AS total"], 
                 condition: `tx_wallet_sender_address='${address}'`
             };
 
             const params = {
-                tablename: "blockchain_transaction", 
+                tablename: "wallet_transaction", 
                 columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_hash", "tx_type", "tx_block_hash", "tx_created_at", "tx_updated_at"], 
                 condition: `tx_wallet_sender_address='${address}'`,
                 limit, 

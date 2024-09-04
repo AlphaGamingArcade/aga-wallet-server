@@ -6,7 +6,7 @@ const httpStatus = require('http-status');
 
 exports.findRefreshTokenByEmailAndRemove = async (email) => {
     const params = {
-        tablename: "blockchain_token", 
+        tablename: "wallet_token", 
         condition: `token_user_email = '${email}'`
     }
 
@@ -26,7 +26,7 @@ exports.findRefreshTokenByEmailAndToken = async ({ email, token }) => {
     let refreshToken;
     if(email && token){
         const params = {
-            tablename: "blockchain_token",
+            tablename: "wallet_token",
             columns: ["token_id", "token_user_id", "token", "token_user_email", "token_expires"],
             condition: `token_user_email='${email}' AND token='${token}'`
         }
@@ -44,7 +44,7 @@ exports.findRefreshTokenByEmailAndToken = async ({ email, token }) => {
 exports.findRefreshTokenAndRemove = async ({ userEmail, refreshToken }) => {
     const token = await this.findRefreshTokenByEmailAndToken({ email: userEmail, token: refreshToken });
     const params = {
-        tablename: "blockchain_token", 
+        tablename: "wallet_token", 
         condition: `token_user_email = '${token.token_user_email}' AND token='${token.token}'`
     }
     const { responseCode } = await SQLFunctions.deleteQuery(params);
@@ -61,7 +61,7 @@ exports.saveRefreshToken = async (refreshToken) => {
     const { token, userId, userEmail, expires } = refreshToken;
 
     const params = {
-        tablename: "blockchain_token",
+        tablename: "wallet_token",
         columns: ['token', 'token_user_id', 'token_user_email', 'token_expires'],
         newValues: [`'${token}'`, `${userId}`, `'${userEmail}'`, `'${expires}'`]
     }

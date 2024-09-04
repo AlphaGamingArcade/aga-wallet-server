@@ -6,7 +6,7 @@ exports.savePasswordResetToken = async (passwordResetToken) => {
     const { resetToken, userId, userEmail, expires } = passwordResetToken;
 
     const params = {
-        tablename: "blockchain_password_reset_token",
+        tablename: "wallet_password_reset_token",
         columns: ['password_reset_token', 'password_reset_token_user_id', 'password_reset_token_user_email', 'password_reset_token_expires'],
         newValues: [`'${resetToken}'`, `${userId}`, `'${userEmail}'`, `'${expires}'`]
     }

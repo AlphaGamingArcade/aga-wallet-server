@@ -1,7 +1,6 @@
 const httpStatus = require("http-status");
-const { convertToPlanks, getTransactionDetails, substrateTransferAsset } = require("../services/chainProvider");
+const { convertToPlanks, getTransactionDetails, substrateTransferAsset } = require("../services/chains/agaProvider");
 const Transaction = require("../models/transaction.model")
-const Notification = require("../models/notification.model")
 const Wallet = require("../models/wallet.model"); 
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
 

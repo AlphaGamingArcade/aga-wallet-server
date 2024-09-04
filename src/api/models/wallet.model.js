@@ -12,7 +12,7 @@ class Wallet {
         const { limit, offset, condition = "1=1", sortBy = "wallet_id", orderBy = "asc" } = options;
         
         const params = {
-            tablename: "blockchain_wallet", 
+            tablename: "wallet_wallet", 
             columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_mnemonic", "wallet_address", "wallet_created_at", "wallet_updated_at"], 
             condition,
             sortBy,
@@ -22,7 +22,7 @@ class Wallet {
         };
 
         const countParams = {
-            tablename: "blockchain_wallet", // Changed to the correct table name
+            tablename: "wallet_wallet", // Changed to the correct table name
             columns: ["COUNT(*) AS total"], 
             condition: condition
         };
@@ -53,7 +53,7 @@ class Wallet {
     static async save(wallet) {
         const { userId, walletAccount, walletAlias, walletStatus, walletMnemonic, walletAddress, walletPassword } = wallet;
         const params = {
-            tablename: "blockchain_wallet",
+            tablename: "wallet_wallet",
             columns: ['wallet_user_id', 'wallet_account', 'wallet_alias', 'wallet_status', 'wallet_mnemonic', 'wallet_address', 'wallet_password'],
             newValues: [userId, `'${walletAccount}'`, `'${walletAlias}'`, `'${walletStatus}'`, `'${walletMnemonic}'`,`'${walletAddress}'`, `'${walletPassword}'`]
         };
@@ -76,23 +76,23 @@ class Wallet {
     }
 
     static async getByAddress(address) {
-        let wallet;
+        let account;
     
         if (address) {
             const params = {
-                tablename: "blockchain_wallet", 
-                columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_address"], 
+                tablename: "wallet_account", 
+                columns: ["account_id", "account_user_id", "account_alias", "account_status", "account_created_at", "account_updated_at"], 
                 condition: `wallet_address='${address}'`
             };
-            wallet = await SQLFunctions.selectQuery(params);
+            account = await SQLFunctions.selectQuery(params);
         }
     
-        if (wallet.data) {
-            return wallet.data;
+        if (account.data) {
+            return account.data;
         }
     
         throw new APIError({
-            message: 'Wallet does not exist',
+            message: 'Account does not exist',
             status: httpStatus.NOT_FOUND,
         });
     }
@@ -106,7 +106,7 @@ class Wallet {
         let wallet;
         if (userId) {
             const params = {
-                tablename: "blockchain_wallet", 
+                tablename: "wallet_wallet", 
                 columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_address", "wallet_password"], 
                 condition: `wallet_user_id='${userId}' AND wallet_address='${senderAddress}'`
             };
@@ -136,7 +136,7 @@ class Wallet {
         let wallet;
         if (walletAddress) {
             const params = {
-                tablename: "blockchain_wallet", 
+                tablename: "wallet_wallet", 
                 columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_mnemonic", "wallet_address", "wallet_password"], 
                 condition: `wallet_address='${walletAddress}'`
             };
@@ -177,13 +177,13 @@ class Wallet {
         let wallets, totalCount;
         if (userId) {
             const countParams = {
-                tablename: "blockchain_wallet", 
+                tablename: "wallet_wallet", 
                 columns: ["COUNT(*) AS total"], 
                 condition: `wallet_user_id=${userId}`
             };
     
             const params = {
-                tablename: "blockchain_wallet", 
+                tablename: "wallet_wallet", 
                 columns: ["wallet_id", "wallet_user_id", "wallet_account", "wallet_alias", "wallet_status", "wallet_address"], 
                 condition: `wallet_user_id=${userId}`,
                 limit,

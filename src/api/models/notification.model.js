@@ -6,7 +6,7 @@ module.exports = class Notification {
     static async save(notification) {
         const { userId, type, message, status } = notification;
         const params = {
-            tablename: 'blockchain_notification',
+            tablename: 'wallet_notification',
             columns: ['notification_user_id', 'notification_type','notification_message', 'notification_status'],
             newValues: [`'${userId}'`, `'${type}'`,`'${message}'`, `'${status}'`]
         };
@@ -51,7 +51,7 @@ module.exports = class Notification {
         const { limit, offset, condition = "1=1", sortBy = "tx_id", orderBy = "asc" } = options;
         
         const params = {
-            tablename: "blockchain_notification",
+            tablename: "wallet_notification",
             columns: ["notification_id", "notification_user_id", "notification_type", "notification_message", "notification_status", "notification_created_at", "notification_updated_at"], 
             condition,
             sortBy,
@@ -61,7 +61,7 @@ module.exports = class Notification {
         };
 
         const countParams = {
-            tablename: "blockchain_notification", // Changed to the correct table name
+            tablename: "wallet_notification", // Changed to the correct table name
             columns: ["COUNT(*) AS total"], 
             condition: condition
         };
@@ -94,19 +94,19 @@ module.exports = class Notification {
         
         if (userId) {
             const unreadCountParams = {
-                tablename: "blockchain_notification", 
+                tablename: "wallet_notification", 
                 columns: ["COUNT(*) AS total"], 
                 condition: `notification_user_id=${userId} AND notification_status = 'unread'`
             };
 
             const countParams = {
-                tablename: "blockchain_notification", 
+                tablename: "wallet_notification", 
                 columns: ["COUNT(*) AS total"], 
                 condition: `notification_user_id=${userId}`
             };
         
             const params = {
-                tablename: "blockchain_notification", 
+                tablename: "wallet_notification", 
                 columns: [
                     "notification_id", "notification_user_id", 
                     "notification_type", "notification_message", 
@@ -157,7 +157,7 @@ module.exports = class Notification {
         }
 
         const params = {
-            tablename: "blockchain_notification", 
+            tablename: "wallet_notification", 
             columns: [
                 "notification_id", "notification_user_id", 
                 "notification_type", "notification_message", 
@@ -183,13 +183,13 @@ module.exports = class Notification {
         const { limit, offset, sortBy = "notification_id" } = options;
         
         const countParams = {
-            tablename: "blockchain_notification", 
+            tablename: "wallet_notification", 
             columns: ["COUNT(*) AS total"], 
             condition: `1=1`
         };
     
         const params = {
-            tablename: "blockchain_notification", 
+            tablename: "wallet_notification", 
             columns: [
                 "notification_id", "notification_user_id", 
                 "notification_type", "notification_message", 
@@ -226,7 +226,7 @@ module.exports = class Notification {
         const { id } = options;
 
         const params = {
-            tablename: "blockchain_notification", 
+            tablename: "wallet_notification", 
             condition: `notification_id=${id}`
         };
     
@@ -246,7 +246,7 @@ module.exports = class Notification {
         const { id, userId, type, message, status } = options;
 
         const params = {
-            tablename: "blockchain_notification",
+            tablename: "wallet_notification",
             newValues: [
                 `notification_user_id='${userId}'`,
                 `notification_type='${type}'`, 
@@ -272,7 +272,7 @@ module.exports = class Notification {
         const { id, status } = options;
 
         const params = {
-            tablename: "blockchain_notification",
+            tablename: "wallet_notification",
             newValues: [
                 `notification_status='${status}'`
             ],

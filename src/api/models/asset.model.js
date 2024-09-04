@@ -7,7 +7,7 @@ class Asset {
         const { limit, offset, condition = "1=1", sortBy = "asset_id", orderBy = "asc" } = options;
         
         const params = {
-            tablename: "blockchain_asset", 
+            tablename: "wallet_asset", 
             columns: ["asset_id", "asset_name", "asset_network", "asset_symbol", "asset_icon"], 
             condition,
             sortBy,
@@ -17,7 +17,7 @@ class Asset {
         };
 
         const countParams = {
-            tablename: "blockchain_asset", // Changed to the correct table name
+            tablename: "wallet_asset", // Changed to the correct table name
             columns: ["COUNT(*) AS total"], 
             condition: condition
         };
@@ -49,7 +49,7 @@ class Asset {
         let asset;
         if (id) {
             const params = {
-                tablename: "blockchain_asset", 
+                tablename: "wallet_asset", 
                 columns: ["asset_id", "asset_name", "asset_network", "asset_symbol", "asset_icon"], 
                 condition: `asset_id=${id}`
             };
@@ -72,13 +72,13 @@ class Asset {
         const err = { message: 'Error retrieving assets' };
 
         const countParams = {
-            tablename: "blockchain_asset", 
+            tablename: "wallet_asset", 
             columns: ["COUNT(*) AS total"], 
             condition: `1=1`
         };
 
         const params = {
-            tablename: "blockchain_asset", 
+            tablename: "wallet_asset", 
             columns: ["asset_id", "asset_name", "asset_network", "asset_symbol", "asset_icon"], 
             condition: `1=1`,
             limit, 

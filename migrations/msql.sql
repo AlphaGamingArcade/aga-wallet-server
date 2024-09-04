@@ -1,4 +1,4 @@
-CREATE TABLE blockchain_user (
+CREATE TABLE wallet_user (
     user_id INT IDENTITY(1,1) PRIMARY KEY,
     user_email VARCHAR(128) NOT NULL UNIQUE,
     user_password VARCHAR(128) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE blockchain_user (
     user_updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE blockchain_wallet (
+CREATE TABLE wallet_wallet (
     wallet_id INT IDENTITY(1, 1) PRIMARY KEY,
     wallet_user_id INT NOT NULL,
     wallet_account VARCHAR(12) NOT NULL UNIQUE,
@@ -23,7 +23,7 @@ CREATE TABLE blockchain_wallet (
     wallet_updated_at DATETIME DEFAULT GETDATE()
 );
 
-CREATE TABLE blockchain_transaction(
+CREATE TABLE wallet_transaction(
     tx_id INT IDENTITY(1, 1) PRIMARY KEY,
     tx_wallet_sender_address VARCHAR(256) NOT NULL,
     tx_wallet_recipient_address VARCHAR(256) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE blockchain_transaction(
     tx_updated_at DATETIME DEFAULT GETDATE()
 )
 
-CREATE TABLE blockchain_token(
+CREATE TABLE wallet_token(
     token_id INT IDENTITY(1, 1) PRIMARY KEY,
     token_user_id INT NOT NULL,
     token VARCHAR(258) NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE blockchain_token(
     token_expires DATETIME
 )
 
-CREATE TABLE blockchain_password_reset_token(
+CREATE TABLE wallet_password_reset_token(
     password_reset_token_id INT IDENTITY(1, 1) PRIMARY KEY,
     password_reset_token VARCHAR(258) NOT NULL,
     password_reset_token_user_id INT NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE blockchain_password_reset_token(
     password_reset_token_expires DATETIME 
 )
 
-create table blockchain_log(
+create table wallet_log(
 	log_id int IDENTITY(1, 1) PRIMARY KEY NOT NULL,
 	log_text varchar(250),
 	log_url varchar(250),
@@ -62,7 +62,7 @@ create table blockchain_log(
     log_updated_at DATETIME DEFAULT GETDATE()
 )
 
-CREATE TABLE blockchain_asset(
+CREATE TABLE wallet_asset(
     asset_id int IDENTITY(1, 1) PRIMARY KEY NOT NULL,
     asset_name varchar(50) NOT NULL UNIQUE,
     asset_network varchar(50) NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE blockchain_asset(
     asset_updated_at DATETIME DEFAULT GETDATE()
 );
 
-CREATE TABLE blockchain_notification (
+CREATE TABLE wallet_notification (
     notification_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
     notification_user_id INT NOT NULL,
     notification_type VARCHAR(50) NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE blockchain_notification (
     notification_updated_at DATETIME DEFAULT GETDATE()
 );
 
-CREATE TABLE blockchain_game (
+CREATE TABLE wallet_game (
     game_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
     game_name VARCHAR(50) NOT NULL,
     game_image VARCHAR(250) NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE blockchain_game (
     game_updated_at DATETIME DEFAULT GETDATE()
 )
 
-CREATE TABLE blockchain_messaging (
+CREATE TABLE wallet_messaging (
     messaging_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
     messaging_user_id INT NOT NULL,
     messaging_token VARCHAR(250) NOT NULL UNIQUE,
@@ -103,10 +103,10 @@ CREATE TABLE blockchain_messaging (
     messaging_updated_at DATETIME DEFAULT GETDATE()
 )
 
-CREATE TABLE blockchain_account (
+CREATE TABLE wallet_account (
     account_id INT IDENTITY(1, 1) PRIMARY KEY,
     account_user_id INT NOT NULL,
-    account_alias VARCHAR(128) NULL,
+    account_code VARCHAR(128) NULL UNIQUE,
     account_status CHAR(1) NOT NULL, -- A for active, I for inactive
     account_mnemonic VARCHAR(256) NOT NULL UNIQUE, -- Increased size for mnemonic
     account_address VARCHAR(256) NOT NULL UNIQUE,
