@@ -3,11 +3,11 @@ const { Keyring } = require('@polkadot/keyring');
 const { mnemonicGenerate } = require('@polkadot/util-crypto');
 const { env } = require("../../config/vars");
 const bcrypt = require("bcryptjs");
-const { getWalletsBalance, getAccountBalance } = require("../services/chains/agaProvider");
+const { getAccountsBalance, getAccountBalance } = require("../services/chains/agaProvider");
 const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require("../utils/constants");
 
 const Account = require("../models/account.model");
-const { decryptMnemonic, encryptMnemonic } = require("../utils/hasher");
+const { encryptMnemonic } = require("../utils/hasher");
 
 /**
  * Load wallet and append to req.locals.
@@ -17,7 +17,7 @@ exports.load = async (req, res, next, address) => {
   try {
     const account = await Account.getByAddress(address);
     const data = await getAccountBalance(address);
-    req.locals = { account, ...data };
+    req.locals = { account: { ...account, account_assets: [ data ] }};
     return next();
   } catch (error) {
     return next(error);
@@ -79,10 +79,8 @@ exports.listUserAccounts = async (req, res, next) => {
       limit: query.limit || DEFAULT_QUERY_LIMIT,
       offset: query.offset || DEFAULT_QUERY_OFFSET
     });
-    const accountAddress = result.accounts.map(account => account.account_address)
-    const accounts = await getWalletsBalance(accountAddress);
     res.status(httpStatus.OK);
-    return res.json({ accounts, metadata: result.metadata });
+    return res.json({ accounts: result.accounts, metadata: result.metadata });
   } catch (error) {
     next(error);
   }

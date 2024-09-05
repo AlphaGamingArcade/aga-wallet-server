@@ -1,12 +1,22 @@
 const expresss = require("express")
 const { validate } = require('express-validation');
-const controller = require('../../controllers/account.controller')
+const accountController = require('../../controllers/account.controller');
+const transactionController = require('../../controllers/transaction.controller');
+const { getAccount } = require("../../validations/account.validation");
+const { authorize } = require("../../middlewares/auth");
+const { sendTransaction } = require("../../validations/transaction.validation");
 
 const router = expresss.Router();
 
 /**
- * Load wallet when API with asset_id route parameter is hit
+ * Load account when API with account_address route parameter is hit
  */
-router.param('account_id', controller.load);
+router.param('account_address', accountController.load);
+
+router.route('/:account_address')
+  .get(authorize(), validate(getAccount), accountController.get);
+
+router.route('/:account_address/transactions')
+  .post(authorize(), validate(sendTransaction), transactionController.send);
 
 module.exports = router

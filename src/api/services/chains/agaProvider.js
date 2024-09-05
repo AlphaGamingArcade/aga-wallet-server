@@ -134,7 +134,7 @@ exports.getBlockByHash = async (blockHash) => {
     }
 }
 
-exports.getWalletsBalance = async (addresses) => {
+exports.getAccountsBalance = async (addresses) => {
     const wsProvider = new WsProvider(provider)
     const api = await ApiPromise.create({ provider: wsProvider });
     try {
@@ -146,12 +146,12 @@ exports.getWalletsBalance = async (addresses) => {
                         const readableBalance = {
                             free: this.convertPlanckToDecimal(Number(new BigNumber(balance.free))),
                             reserved: this.convertPlanckToDecimal(Number(new BigNumber(balance.reserved))),
-                            miscFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
-                            feeFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
+                            misc_frozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
+                            fee_frozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
                         };
                         return {
-                            accountAddress: addresses[index],
-                            tokenSymbol: "AGA",
+                            account_address: addresses[index],
+                            token_symbol: "AGA",
                             ...readableBalance
                         }
                     });
@@ -176,34 +176,6 @@ exports.getWalletsBalance = async (addresses) => {
     }
 }
 
-exports.getWalletBalance = async (address) => {
-    const wsProvider = new WsProvider(provider)
-    const api = await ApiPromise.create({ provider: wsProvider });
-    try {
-        // Retrieve the account balance & nonce via the system module
-        const { data } = await api.query.system.account(address);
-        const balance = data.toJSON();
-        const readableBalance = {
-            free: this.convertPlanckToDecimal(Number(new BigNumber(balance.free))),
-            reserved: this.convertPlanckToDecimal(Number(new BigNumber(balance.reserved))),
-            miscFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
-            feeFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
-        };
-        return {
-            accountAddress: address,
-            tokenSymbol: "AGA",
-            ...readableBalance
-        }
-    } catch (error) {
-        throw new APIError({
-            status: httpStatus.INTERNAL_SERVER_ERROR,
-            message: error.message,
-        });
-    } finally {
-        await api.disconnect();
-    }
-}
-
 exports.getAccountBalance = async (address) => {
     const wsProvider = new WsProvider(provider)
     const api = await ApiPromise.create({ provider: wsProvider });
@@ -214,12 +186,12 @@ exports.getAccountBalance = async (address) => {
         const readableBalance = {
             free: this.convertPlanckToDecimal(Number(new BigNumber(balance.free))),
             reserved: this.convertPlanckToDecimal(Number(new BigNumber(balance.reserved))),
-            miscFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
-            feeFrozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
+            misc_frozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.frozen))),
+            fee_frozen: this.convertPlanckToDecimal(Number(new BigNumber(balance.flags))),
         };
         return {
-            accountAddress: address,
-            tokenSymbol: "AGA",
+            account_address: address,
+            token_symbol: "AGA",
             ...readableBalance
         }
     } catch (error) {

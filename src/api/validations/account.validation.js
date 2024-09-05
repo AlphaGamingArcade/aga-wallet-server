@@ -3,7 +3,7 @@ const Joi = require("joi");
 module.exports = {
     getAccount: {
         params: Joi.object({
-            account_id: Joi.number().required()
+            account_address: Joi.string().required()
         })
     },
     createAccount: {
@@ -35,7 +35,7 @@ module.exports = {
     getUserAccount: {
         params: Joi.object({
             user_id: Joi.number().required(),
-            account_id: Joi.number().required()
+            account_address: Joi.string().required()
         })
     },
     // POST /v1/users/:user_id/accounts/:account_id

@@ -27,7 +27,7 @@ const router = express.Router();
 router.param('user_id', userController.load);
 router.param('notification_id', notificationController.load);
 router.param('messaging_id', messagingController.load);
-router.param('account_id', accountController.load);
+router.param('account_address', accountController.load);
 
 router
   .route('/')
@@ -82,7 +82,7 @@ router
   .post(authorize(LOGGED_USER), validate(createUserAccount), accountController.create);
 
 router
-  .route('/:user_id/accounts/:account_id')
+  .route('/:user_id/accounts/:account_address')
   .get(authorize(LOGGED_USER), validate(getUserAccount), accountController.get);
-
+  
 module.exports = router;

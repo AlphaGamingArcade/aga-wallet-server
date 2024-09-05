@@ -3,6 +3,8 @@ const { convertToPlanks, getTransactionDetails, substrateTransferAsset } = requi
 const Transaction = require("../models/transaction.model")
 const Wallet = require("../models/wallet.model"); 
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
+const Account = require("../models/account.model");
+const { decryptMnemonic } = require("../utils/hasher");
 
 /**
  * Load wallet and append to req.locals.
@@ -30,23 +32,27 @@ exports.get = (req, res) => res.json(req.locals.wallet);
  */
 exports.send = async (req, res, next) => {
   try {
-    const senderMnemonic = await Wallet.getWalletMnemonic({
-      walletAddress: req.body.sender_address,
-      password: req.body.password,
-    });
-    const senderAddress = req.body.sender_address;
-    const recipientAddress = req.body.recipient_address;
+    const userId = req.user.user_id;
+    const sourceAddress = req.params.account_address;
+    const destinationAddress = req.body.destination_address;
+    
+    const account = await Account.getByAddress(sourceAddress, 
+      ['account_mnemonic', 'account_password']
+    )
+
+    const mnemonic = await Account.decryptMnemonic(account, req.body.password);
+
     const transferAmount = convertToPlanks(req.body.amount);
     const transaction = await substrateTransferAsset({
-      senderMnemonic, 
-      senderAddress,
-      recipientAddress, 
+      senderMnemonic: mnemonic, 
+      senderAddress: sourceAddress,
+      recipientAddress: destinationAddress, 
       amount: transferAmount
     });
 
     await Transaction.save({
-      senderAddress: req.body.sender_address,
-      recipientAddress: recipientAddress,
+      senderAddress: sourceAddress,
+      recipientAddress: destinationAddress,
       amount: req.body.amount,
       status: transaction.success ? Transaction.STATUS_SUCCESS : Transaction.STATUS_FAILED,
       blockHash: transaction.block_hash,
@@ -54,16 +60,18 @@ exports.send = async (req, res, next) => {
     });
 
     // Send Notification
-    if(transaction.success && req.messaging.messaging_token){
-      const message = {
-        data: { score: '850', time: transaction.timestamp },
-        notification: {
-            title: `Asset received`,
-            body: `Received ${req.body.amount} AGA from ${req.body.sender_address}`
-        },
-        token: req.messaging.messaging_token
+    if(transaction.success){
+      if(req.messaging?.messaging_token){
+        const message = {
+          data: { score: '850', time: transaction.timestamp },
+          notification: {
+              title: `Asset received`,
+              body: `Received ${req.body.amount} AGA from ${req.body.sender_address}`
+          },
+          token: req.messaging.messaging_token
+        }
+        res.cloudMessaging(message);
       }
-      res.cloudMessaging(message);
     }
 
     res.status(httpStatus.CREATED);

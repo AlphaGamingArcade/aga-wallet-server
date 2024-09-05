@@ -15,6 +15,9 @@ module.exports = {
   },
   // POSST /v1/transaction/send
   sendTransaction: {
+    params: Joi.object({
+      account_address: Joi.string().required(),
+    }),
     body: Joi.object({
         amount: Joi.number().required()
         .custom((value, helpers) => {
@@ -33,8 +36,7 @@ module.exports = {
           'number.base': 'Amount must be a number',
           'any.required': 'Amount is required',
         }),
-        sender_address: Joi.string().required(),
-        recipient_address: Joi.string().required(),
+        destination_address: Joi.string().required(),
         password: Joi.string().min(6).required()
     })
   },

@@ -24,5 +24,6 @@ router.use('/assets', assetRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/games', gameRoutes);
 router.use('/messagings', messagingRoutes);
+router.use('/accounts', accountRoutes);
 
 module.exports = router;

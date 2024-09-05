@@ -1,11 +1,6 @@
 const httpStatus = require('http-status');
 const { omit } = require('lodash');
 const { findUserById } = require('../models/user.model');
-const { getWalletsBalance } = require('../services/chains/agaProvider');
-const { DEFAULT_QUERY_OFFSET, DEFAULT_QUERY_LIMIT } = require('../utils/constants');
-
-const Wallet = require('../models/wallet.model');
-const Notification = require('../models/notification.model');
 
 /**
  * Load user and append to req.
