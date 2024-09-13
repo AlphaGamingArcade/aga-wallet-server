@@ -87,10 +87,10 @@ exports.send = async (req, res, next) => {
 exports.list = async (req, res, next) => {
   try {
     const { query } = req
-    const { wallet } = req.locals;
+    const { account } = req.locals;
 
     const transactions = await Transaction.list({ 
-      condition: `tx_wallet_sender_address = '${wallet.wallet_address}' OR tx_wallet_recipient_address = '${wallet.wallet_address}'`,
+      condition: `tx_wallet_sender_address = '${account.account_address}' OR tx_wallet_recipient_address = '${account.account_address}'`,
       sortBy: query.sort_by || "tx_id", 
       orderBy: query.order_by || "asc",
       limit: query.limit || DEFAULT_QUERY_LIMIT,

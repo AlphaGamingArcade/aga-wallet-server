@@ -47,5 +47,16 @@ module.exports = {
         order_by:  Joi.string().valid('asc', 'desc').optional(),
         sort_by: Joi.string().regex(/^[A-Za-z_]+$/).optional()
     }),
-}
+  },
+  listAccountTransactions: {
+    params: Joi.object({
+      account_address: Joi.string().required()
+    }),
+    query: Joi.object({
+        limit: Joi.number().optional(),
+        offset: Joi.number().optional(),
+        order_by:  Joi.string().valid('asc', 'desc').optional(),
+        sort_by: Joi.string().regex(/^[A-Za-z_]+$/).optional()
+    }),
+  }
 }
