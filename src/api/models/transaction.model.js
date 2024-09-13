@@ -12,7 +12,7 @@ class Transaction {
         
         const params = {
             tablename: "wallet_transaction", 
-            columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_created_at", "tx_updated_at"], 
+            columns: ["tx_id", "tx_wallet_sender_address", "tx_wallet_recipient_address", "tx_amount", "tx_status", "tx_type","tx_created_at", "tx_updated_at"], 
             condition,
             sortBy,
             orderBy,

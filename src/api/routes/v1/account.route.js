@@ -4,7 +4,8 @@ const accountController = require('../../controllers/account.controller');
 const transactionController = require('../../controllers/transaction.controller');
 const { getAccount } = require("../../validations/account.validation");
 const { authorize } = require("../../middlewares/auth");
-const { listAccountTransactions } = require("../../validations/transaction.validation");
+const { listAccountTransactions, sendTransaction } = require("../../validations/transaction.validation");
+const { authorizeCloudMessaging } = require('../../middlewares/cloudMessaging');
 
 const router = expresss.Router();
 
@@ -18,5 +19,9 @@ router.route('/:account_address')
 
 router.route('/:account_address/transactions')
   .get(authorize(), validate(listAccountTransactions), transactionController.list);
+
+router
+  .route('/:account_address/transactions/send')
+  .post(authorize(), validate(sendTransaction), authorizeCloudMessaging(), transactionController.send)
 
 module.exports = router
