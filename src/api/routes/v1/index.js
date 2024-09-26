@@ -8,6 +8,7 @@ const assetRoutes = require("./asset.route")
 const notificationRoutes = require("./notification.route")
 const gameRoutes = require("./game.route")
 const messagingRoutes = require("./messaging.route")
+const agaRoutes = require("./aga.route")
 
 const router = express.Router();
 
@@ -25,5 +26,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/games', gameRoutes);
 router.use('/messagings', messagingRoutes);
 router.use('/accounts', accountRoutes);
+router.use('/aga', agaRoutes);
 
 module.exports = router;

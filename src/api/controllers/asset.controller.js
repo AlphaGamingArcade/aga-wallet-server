@@ -1,6 +1,5 @@
 const httpStatus = require("http-status");
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
-
 const Asset = require("../models/asset.model");
 
 /**
@@ -38,7 +37,7 @@ exports.list = async (req, res, next) => {
     });
     
     res.status(httpStatus.OK);
-    return res.json({ ...assets });
+    return res.json({ ...assets, chainAssets });
   } catch (error) {
     return next(error)
   }

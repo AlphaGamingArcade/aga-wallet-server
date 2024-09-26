@@ -4,6 +4,7 @@ const { provider } = require('../../../config/vars');
 const httpStatus = require('http-status');
 const APIError = require('../../errors/api-error');
 const BigNumber = require('bignumber.js');
+const { formatDecimalsFromToken } = require('../../utils/helper');
 
 exports.convertToPlanks = (amountPerUnit) => {
     const plancksPerUnit = 1000000000000;
@@ -248,3 +249,109 @@ exports.getTransactions = async (options) => {
         await api.disconnect();
     }
 }
+
+exports.listAssets = async () => {
+    // Connect to the blockchain node
+    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
+    const api = await ApiPromise.create({ provider: wsProvider });
+
+    try {
+        let chainAssets = [];
+        const assets = await api.query.assets.asset.keys();
+        
+        for (let asset of assets) {
+            const assetId = asset.args[0].toHuman();
+            const assetDetails = await api.query.assets.asset(assetId);
+            const assetMetadata = await api.query.assets.metadata(assetId);
+            const assetData = {
+                asset_id: assetId,
+                asset_details: assetDetails.toHuman(),
+                asset_metadata: assetMetadata.toHuman()
+            }
+            chainAssets.push(assetData)
+        }
+
+        return { assets: chainAssets }
+     } catch (error) {
+         console.log(error)
+     } finally {
+         // Disconnect from the node
+         await api.disconnect();
+     }
+}
+
+exports.getChainProperties = async () => { 
+     // Connect to the blockchain node
+    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
+    const api = await ApiPromise.create({ provider: wsProvider });
+    try {
+        const tokenMetadata = api.registry.getChainProperties();
+        return tokenMetadata
+    } catch (error) {
+        await api.disconnect();
+    }
+}
+
+exports.getAccountTokensBalance = async (walletAddress) => {
+    // Connect to the blockchain node
+    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
+    const api = await ApiPromise.create({ provider: wsProvider });
+
+    const now = await api.query.timestamp.now();
+    const { nonce, data: balance } = await api.query.system.account(walletAddress);
+    const nextNonce = await api.rpc.system.accountNextIndex(walletAddress);
+    const tokenMetadata = api.registry.getChainProperties();
+    const existentialDeposit = await api.consts.balances.existentialDeposit;
+  
+    const allAssets = await api.query.assets.asset.entries();
+  
+    const allChainAssets = [];
+  
+    allAssets.forEach((item) => {
+      allChainAssets.push({ tokenData: item?.[1].toHuman(), tokenId: item?.[0].toHuman() });
+    });
+  
+    const myAssetTokenData = [];
+    const assetTokensDataPromises = [];
+  
+    for (const item of allChainAssets) {
+      const cleanedTokenId = item?.tokenId?.[0]?.replace(/[, ]/g, "");
+      assetTokensDataPromises.push(
+        Promise.all([
+          api.query.assets.account(cleanedTokenId, walletAddress),
+          api.query.assets.metadata(cleanedTokenId),
+        ]).then(([tokenAsset, assetTokenMetadata]) => {
+          if (tokenAsset.toHuman()) {
+            const resultObject = {
+              tokenId: cleanedTokenId,
+              assetTokenMetadata: assetTokenMetadata.toHuman(),
+              tokenAsset: tokenAsset.toHuman(),
+            };
+            return resultObject;
+          }
+          return null;
+        })
+      );
+    }
+  
+    const results = await Promise.all(assetTokensDataPromises);
+  
+    myAssetTokenData.push(...results.filter((result) => result !== null));
+  
+    const ss58Format = tokenMetadata?.ss58Format.toHuman();
+    const tokenDecimals = tokenMetadata?.tokenDecimals.toHuman();
+    const tokenSymbol = tokenMetadata?.tokenSymbol.toHuman();
+  
+    console.log(`${now}: balance of ${balance?.free} and a current nonce of ${nonce} and next nonce of ${nextNonce}`);
+  
+    const balanceFormatted = formatDecimalsFromToken(balance?.free.toString(), tokenDecimals);
+  
+    return {
+      balance: balanceFormatted,
+      ss58Format,
+      existentialDeposit: existentialDeposit.toHuman(),
+      tokenDecimals: Array.isArray(tokenDecimals) ? tokenDecimals?.[0] : "",
+      tokenSymbol: Array.isArray(tokenSymbol) ? tokenSymbol?.[0] : "",
+      assets: myAssetTokenData,
+    };
+  };

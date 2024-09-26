@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Client</title>
+  <script>
+    let ws;
+    let token;
+
+    // Function to disconnect WebSocket
+    function disconnectWs() {
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+    }
+
+    // Function to connect to WebSocket server
+    function connectWebSocket() {
+      disconnectWs();
+      
+      // Replace with your server's WebSocket URL
+      const socketUrl = 'ws://localhost:8000'; 
+
+      // Create a new WebSocket connection
+      ws = new WebSocket(socketUrl);
+
+      // Handle connection open event
+      ws.addEventListener('open', () => {
+        console.log("Connection is now open");
+        document.getElementById('status').textContent = 'Connected';
+      });
+
+      // Handle connection close event
+      ws.addEventListener('close', () => {
+        console.log("Connection is closed");
+        document.getElementById('status').textContent = 'Disconnected';
+      });
+
+      // Handle error event
+      ws.addEventListener('error', () => {
+        alert("WebSocket error occurred");
+        document.getElementById('status').textContent = 'Error';
+      });
+
+      // Handle incoming messages from the server
+      ws.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+        const messageList = document.getElementById('messages');
+        const newMessage = document.createElement('li');
+
+        if (data.type === "qr_login") {
+          token = data.token;
+          newMessage.textContent = `QR Token Received: ${data.token}`;
+          console.log("Received QR Token:", data);
+
+        }
+
+        if (data.type === "qr_login_approved") {
+          newMessage.textContent = `LOGIN APPROVED: User ID: ${data.user_id}, Token: ${data.token}`;
+          console.log("Login Approved:", data);
+        }
+
+        messageList.appendChild(newMessage);
+      });
+    }
+
+    // Function to request QR login
+    function connectWallet() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const wsMessage = {
+          type: "qr_login"
+        };
+        ws.send(JSON.stringify(wsMessage));
+        console.log("QR login requested");
+      } else {
+        console.log('WebSocket is not connected.');
+      }
+    }
+
+    // Function to approve the QR login
+    function approveLogin() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const wsMessage = {
+          type: "qr_login_approved",
+          token,
+          user_id: 1
+        };
+        ws.send(JSON.stringify(wsMessage));
+        console.log("QR login approved");
+      } else {
+        console.log('WebSocket is not connected.');
+      }
+    }
+
+    // Initialize WebSocket connection when the page loads
+    window.addEventListener('load', () => {
+      connectWebSocket();
+    });
+  </script>
+</head>
+<body>
+  <h1>WebSocket Client</h1>
+  <p>Status: <span id="status">Disconnected</span></p>
+
+  <button onclick="disconnectWs()">Disconnect from WebSocket</button>
+  <button onclick="connectWallet()">CONNECT WALLET</button>
+
+  <input type="text" placeholder="qr token"/>
+  <button onclick="approveLogin()">Approve Login</button>
+
+  <h2>Messages</h2>
+  <ul id="messages"></ul>
+</body>
+</html>

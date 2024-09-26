@@ -114,3 +114,13 @@ CREATE TABLE wallet_account (
     account_created_at DATETIME DEFAULT GETDATE(),
     account_updated_at DATETIME DEFAULT GETDATE()
 );
+
+CREATE TABLE wallet_qr_sessions (
+    qr_session_id INT IDENTITY(1, 1) PRIMARY KEY,
+    qr_session_user_id INT,
+    qr_session_token VARCHAR(256) NOT NULL UNIQUE,
+    qr_session_status char(1) DEFAULT 'P',
+    qr_session_expires_at DATETIME,
+    qr_session_created_at DATETIME DEFAULT GETDATE(),
+    qr_session_updated_at DATETIME DEFAULT GETDATE()
+)
