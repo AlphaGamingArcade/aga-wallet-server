@@ -115,12 +115,12 @@ CREATE TABLE wallet_account (
     account_updated_at DATETIME DEFAULT GETDATE()
 );
 
-CREATE TABLE wallet_qr_sessions (
-    qr_session_id INT IDENTITY(1, 1) PRIMARY KEY,
-    qr_session_user_id INT,
-    qr_session_token VARCHAR(256) NOT NULL UNIQUE,
-    qr_session_status char(1) DEFAULT 'P',
-    qr_session_expires_at DATETIME,
-    qr_session_created_at DATETIME DEFAULT GETDATE(),
-    qr_session_updated_at DATETIME DEFAULT GETDATE()
-)
+CREATE TABLE wallet_qr_room (
+    qr_room_id INT IDENTITY(1, 1) PRIMARY KEY,      -- Auto-increment primary key
+    qr_room_user_id INT,                   -- Ensure this column is not null if it's required
+    qr_room_signed CHAR(1) DEFAULT 'n',             -- Use CHAR for y and n
+    qr_room_token VARCHAR(256),    
+    qr_room_client_id VARCHAR(256) NOT NULL,
+    qr_room_status CHAR(1) DEFAULT 'a',             -- Single character column, default to 'a'
+    qr_room_expires_at DATETIME                     -- Expiration timestamp
+);

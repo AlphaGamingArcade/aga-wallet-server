@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebSocket Client</title>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+    integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
   <script>
     let ws;
     let token;
@@ -55,6 +61,19 @@
           newMessage.textContent = `QR Token Received: ${data.token}`;
           console.log("Received QR Token:", data);
 
+          // Generate QR code for the received token
+          clearQR();
+          generateQrCode(token); // Generate QR code for the token
+
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            const wsMessage = {
+              type: "qr_login_join_room",
+              token
+            };
+            ws.send(JSON.stringify(wsMessage));
+          } else {
+            console.log('WebSocket is not connected.');
+          }
         }
 
         if (data.type === "qr_login_approved") {
@@ -62,8 +81,18 @@
           console.log("Login Approved:", data);
         }
 
+        if (data.type === "room_message") {
+          console.log("Message received", data);
+          newMessage.textContent = `MESSAGE FROM, Token: ${data.token}`;
+        }
+        
+        if (data.type === "qr_login_join_room"){
+          newMessage.textContent = `JOINED ROOM, Token: ${data.token}`;
+        }
+
         messageList.appendChild(newMessage);
       });
+
     }
 
     // Function to request QR login
@@ -74,6 +103,7 @@
         };
         ws.send(JSON.stringify(wsMessage));
         console.log("QR login requested");
+        
       } else {
         console.log('WebSocket is not connected.');
       }
@@ -94,10 +124,53 @@
       }
     }
 
+    // Function to join to QR room
+    function joinRoom() {
+      const token = document.getElementById('room-id').value;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const wsMessage = {
+          type: "qr_login_join_room",
+          token
+        };
+        ws.send(JSON.stringify(wsMessage));
+      } else {
+        console.log('WebSocket is not connected.');
+      }
+    }
+
+
+    function messageRoom(){
+      const token = document.getElementById("room-id").value;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const wsMessage = {
+          type: "room_message",
+          token
+        };
+        ws.send(JSON.stringify(wsMessage));
+      } else {
+        console.log('WebSocket is not connected.');
+      }
+    }
+
     // Initialize WebSocket connection when the page loads
     window.addEventListener('load', () => {
       connectWebSocket();
     });
+
+    const generateQrCode = (data) => {
+      new QRCode(document.getElementById("qr-code"), {
+        text: data,
+        width: 300,
+        height: 300,
+      });
+    };
+
+    const clearQR = () => {
+          // QR Code functions
+      const qrCode = document.querySelector("#qr-code"); 
+      qrCode.innerHTML = ""; // Clear the QR code display before generating a new one
+    };
+
   </script>
 </head>
 <body>
@@ -106,10 +179,20 @@
 
   <button onclick="disconnectWs()">Disconnect from WebSocket</button>
   <button onclick="connectWallet()">CONNECT WALLET</button>
-
+  <br>
+  <br>
+  <div id="qr-code"></div>
+  <br>
+  <br>
+  <input type="text" placeholder="qr token" id="room-id"/>
+  <button onclick="joinRoom()">Join Room</button>
+  <br>
+  <br>
   <input type="text" placeholder="qr token"/>
   <button onclick="approveLogin()">Approve Login</button>
 
+  <button onclick="messageRoom()">Message Room</button>
+  
   <h2>Messages</h2>
   <ul id="messages"></ul>
 </body>
