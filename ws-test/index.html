@@ -76,11 +76,6 @@
           }
         }
 
-        if (data.type === "qr_login_approved") {
-          newMessage.textContent = `LOGIN APPROVED: User ID: ${data.user_id}, Token: ${data.token}`;
-          console.log("Login Approved:", data);
-        }
-
         if (data.type === "room_message") {
           console.log("Message received", data);
           newMessage.textContent = `MESSAGE FROM, Token: ${data.token}`;
@@ -90,6 +85,10 @@
           newMessage.textContent = `JOINED ROOM, Token: ${data.token}`;
         }
 
+        if (data.type === "qr_login_approved") {
+          newMessage.textContent = `Approved, Token: ${data.token} and DATA ${JSON.stringify(data)}`;
+        }
+        
         messageList.appendChild(newMessage);
       });
 
@@ -115,10 +114,10 @@
         const wsMessage = {
           type: "qr_login_approved",
           token,
-          user_id: 1
+          wallet_address: "5GLSWsf84ivw9AoZBDvC7CQgUVQsSc3KpHivUJGrmt4fAMQg",
+          wallet_password: "password"
         };
         ws.send(JSON.stringify(wsMessage));
-        console.log("QR login approved");
       } else {
         console.log('WebSocket is not connected.');
       }
@@ -126,7 +125,7 @@
 
     // Function to join to QR room
     function joinRoom() {
-      const token = document.getElementById('room-id').value;
+      token = document.getElementById('room-id').value;
       if (ws && ws.readyState === WebSocket.OPEN) {
         const wsMessage = {
           type: "qr_login_join_room",

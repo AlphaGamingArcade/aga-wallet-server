@@ -39,7 +39,6 @@ wss.on('connection', (ws) => {
 
     ws.on('close', async () => {
         await leaveRooms(ws.id);
-        console.log(`Connection closed for client ID: ${ws.id}`);
     });
 });
 

@@ -1,4 +1,3 @@
-const { approveQrLogin } = require('../api/controllers/qrsession.controller');
 const { generateQrRoomToken } = require('../api/controllers/qrroom.controller');
 const { joinRoom, listClientsInRoom } = require('./service');
 const { WebSocket } = require('ws');
@@ -8,14 +7,17 @@ async function handleRoomMessage(wss, data) {
     const clients = await listClientsInRoom(data.token);
 
     clients.rooms.forEach((room) => {
-        const client = Array.from(wss.clients).find(client => client.id === room.qr_room_client_id);
-        if (client && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-                type: "room_message",
-                token: data.token,
-                extra: "THIS IS A MESSAGE"
-            }));
-        }
+        Array.from(wss.clients).forEach(client => {
+            if (client.id === room.qr_room_client_id) {
+                if (client && client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        type: "room_message",
+                        token: data.token,
+                        extra: "THIS IS A MESSAGE"
+                    }));
+                }
+            }
+        })
     });
 }
 
@@ -39,18 +41,20 @@ async function handleQrLogin(ws) {
 
 // Handle QR login approval
 async function handleQrLoginApproved(wss, data) {
-    await approveQrLogin({ token: data.token, userId: data.user_id });
     const clients = await listClientsInRoom(data.token);
-
     clients.rooms.forEach((room) => {
-        const client = Array.from(wss.clients).find(client => client.id === room.qr_room_client_id);
-        if (client && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-                type: "qr_login_approved",
-                token: data.token,
-                ...data
-            }));
-        }
+        Array.from(wss.clients).forEach(client => {
+            if (client.id === room.qr_room_client_id){
+                if (client && client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        type: "qr_login_approved",
+                        token: data.token,
+                        refresh_token: data.refresh_token,
+                        email: data.email,
+                    }));
+                }
+            }
+        })
     });
 }
 
@@ -58,7 +62,6 @@ async function handleQrLoginApproved(wss, data) {
 async function handleMessage(ws, msg, wss) {
     try {
         const data = JSON.parse(msg);
-
         switch (data.type) {
             case "room_message":
                 await handleRoomMessage(wss, data);
