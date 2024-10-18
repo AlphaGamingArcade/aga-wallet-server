@@ -3,12 +3,41 @@ const APIError = require("../errors/api-error");
 const SQLFunctions = require("../utils/sqlFunctions");
 
 class Asset {
+    static async save(options){
+        const { networkId, name, symbol, native = 'y', contract = '' } = options;
+        const params = {
+            tablename: 'wallet_asset',
+            columns: ['asset_network_id', 'asset_name', 'asset_symbol', 'asset_native', 'asset_contract'],
+            newValues: [`'${networkId}'`, `'${name}'`, `'${symbol}'`, `'${native}'`,`'${contract}'`], 
+        };
+        const { responseCode } = await SQLFunctions.insertQuery(params);
+        
+        if (responseCode === 0) {
+            return { messag: 'Asset registered succesfully'};
+        }
+    
+        throw new APIError({
+            message: 'Registering asset failed',
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+        });
+    }
+
     static async list(options){
         const { limit, offset, condition = "1=1", sortBy = "asset_id", orderBy = "asc" } = options;
-        
+
         const params = {
             tablename: "wallet_asset", 
-            columns: ["asset_id", "asset_name", "asset_network", "asset_symbol", "asset_icon"], 
+            columns:[
+                "wallet_asset.asset_id", 
+                "wallet_asset.asset_network_id",
+                "wallet_network.network_name as asset_network_name", 
+                "wallet_asset.asset_name", 
+                "wallet_asset.asset_symbol", 
+                "wallet_asset.asset_decimals", 
+                "wallet_asset.asset_native", 
+                "asset_contract", 
+            ],
+            leftJoin: "wallet_network ON wallet_asset.asset_network_id = wallet_network.network_id", 
             condition,
             sortBy,
             orderBy,
@@ -25,7 +54,7 @@ class Asset {
         try {
             const result = await Promise.all([
                 SQLFunctions.selectQuery(countParams),
-                SQLFunctions.selectQueryMultiple(params),
+                SQLFunctions.selectLeftJoinQuery(params),
             ]);
 
             const totalCount = result[0]?.data?.total || 0;
@@ -50,7 +79,7 @@ class Asset {
         if (id) {
             const params = {
                 tablename: "wallet_asset", 
-                columns: ["asset_id", "asset_name", "asset_network", "asset_symbol", "asset_icon"], 
+                columns: ["asset_id", "asset_network_id", "asset_name", "asset_native", "asset_contract"], 
                 condition: `asset_id=${id}`
             };
             asset = await SQLFunctions.selectQuery(params);
@@ -79,7 +108,7 @@ class Asset {
 
         const params = {
             tablename: "wallet_asset", 
-            columns: ["asset_id", "asset_name", "asset_network", "asset_symbol", "asset_icon"], 
+            columns: ["asset_id", "asset_network_id", "asset_name", "asset_native", "asset_contract"], 
             condition: `1=1`,
             limit, 
             offset, 
@@ -109,6 +138,17 @@ class Asset {
         }
 
         throw new APIError(err);
+    }
+
+    static checkDuplicate(error) {
+        if (error.message.includes('Violation of UNIQUE KEY constraint')) {
+            return new APIError({
+                message: 'Asset already exists',
+                status: httpStatus.CONFLICT,
+                isPublic: true,
+            });
+        }
+        return error;
     }
 }
 

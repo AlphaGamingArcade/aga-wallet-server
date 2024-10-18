@@ -30,7 +30,7 @@ exports.load = async (req, res, next, address) => {
  */
 exports.get = (req, res) => res.json(req.locals.wallet);
 
-  /**
+/**
  * Returns jwt token if registration was successful
  * @public
  */

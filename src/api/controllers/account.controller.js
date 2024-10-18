@@ -37,25 +37,24 @@ exports.get = (req, res) => res.json(req.locals.account);
 exports.create = async (req, res, next) => {
   try {
     const userId = req.user.user_id;
-    const keyring = new Keyring({ type: 'sr25519' });
-    let mnemonic = mnemonicGenerate();
-    const pair = keyring.createFromUri(mnemonic);
+    let password = req.body.account_password;
+    const accountCode = req.body.account_code;
 
-    let password = req.body.account_password
+    let mnemonic = mnemonicGenerate();
+    
+    const hashMnemonic = encryptMnemonic(mnemonic, password);
+    mnemonic = hashMnemonic;
+
     const rounds = env === 'test' ? 1 : 10;
     const hashPassword = await bcrypt.hash(password, rounds);
-    const hashMnemonic = encryptMnemonic(mnemonic, password);
-
-    mnemonic = hashMnemonic;
     password = hashPassword;
 
     const result = await Account.save({
       userId, 
-      code: req.body.account_code, 
-      address: pair.address,
+      accountCode, 
+      status: "a", 
       mnemonic, 
-      password,
-      status: 'a', 
+      password
     });
 
     res.status(httpStatus.CREATED);
@@ -79,6 +78,7 @@ exports.listUserAccounts = async (req, res, next) => {
       limit: query.limit || DEFAULT_QUERY_LIMIT,
       offset: query.offset || DEFAULT_QUERY_OFFSET
     });
+
     res.status(httpStatus.OK);
     return res.json({ accounts: result.accounts, metadata: result.metadata });
   } catch (error) {

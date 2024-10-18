@@ -34,7 +34,7 @@ exports.converter = (err, req, res, next) => {
     convertedError = new APIError({
       message: 'Validation Error',
       errors: err.errors,
-      status: err.status,
+      status: httpStatus.BAD_REQUEST,
       stack: err.stack,
     });
   } else if (!(err instanceof APIError)) {

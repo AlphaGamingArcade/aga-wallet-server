@@ -6,11 +6,11 @@ const { decryptMnemonic } = require("../utils/hasher");
 
 module.exports = class Account {
     static async save(options){
-        const { userId, code = "", status="a", mnemonic, address, password } = options
+        const { userId, accountCode = "", status="a", mnemonic, password } = options
         const params = {
             tablename: "wallet_account",
-            columns: ['account_user_id', 'account_code', 'account_status', 'account_mnemonic', 'account_address', 'account_password'],
-            newValues: [userId, `'${code}'`, `'${status}'`, `'${mnemonic}'`, `'${address}'`,`'${password}'`]
+            columns: ['account_user_id', 'account_code', 'account_status', 'account_mnemonic', 'account_password'],
+            newValues: [userId, `'${accountCode}'`, `'${status}'`, `'${mnemonic}'`,`'${password}'`]
         };
         const { responseCode } = await SQLFunctions.insertQuery(params);
         if (responseCode === 0) {
@@ -19,7 +19,16 @@ module.exports = class Account {
             };
         }
         throw new APIError({
-            message: 'Creating wallet failed',
+            message: 'Creating account failed',
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+        });
+    }
+
+    static checkUserHaveAccount(options){
+        const { userId } = options;
+
+        throw new APIError({
+            message: 'Creating account failed',
             status: httpStatus.INTERNAL_SERVER_ERROR,
         });
     }
@@ -44,6 +53,28 @@ module.exports = class Account {
             isPublic: true,
         });
     }
+
+    static async getByAccountCode(accountCode, extra = []) {
+        let account;
+        if (accountCode) {
+            const params = {
+                tablename: "wallet_account", 
+                columns: [...["account_id", "account_user_id", "account_code", "account_status"], ...extra], 
+                condition: `account_code='${accountCode}'`
+            };
+            account = await SQLFunctions.selectQuery(params);
+        }
+
+        if(account.data){
+            return account.data
+        }
+
+        throw new APIError({
+            status: httpStatus.NOT_FOUND,
+            isPublic: true,
+        });
+    }
+
 
     static async getByAddress(address, extra = []) {
         let account;
@@ -71,7 +102,7 @@ module.exports = class Account {
         
         const params = {
             tablename: "wallet_account", 
-            columns: ["account_id", "account_user_id", "account_code", "account_status", "account_address", "account_created_at", "account_updated_at"], 
+            columns: ["account_id", "account_user_id", "account_code", "account_status", "account_created_at", "account_updated_at"], 
             condition,
             sortBy,
             orderBy,
@@ -115,7 +146,11 @@ module.exports = class Account {
         };
         
         if(await passwordMatches(password, account.account_password)){
-            return decryptMnemonic(account.account_mnemonic, password);
+            const phrase = decryptMnemonic(account.account_mnemonic, password);
+            if (!phrase) {
+                err.message = "Incorrect account password"
+            }
+            return phrase;
         } else {
             err.message = "Incorrect account password"
         }
@@ -125,12 +160,22 @@ module.exports = class Account {
 
     static checkDuplicate(error) {
         if (error.message.includes('Violation of UNIQUE KEY constraint')) {
+            let errorMessage = 'Account already exists'; // Default message
+
+            if (error.message.includes('UQ_account_code')) {
+                errorMessage = 'Account code already exists';
+            } else if (error.message.includes('UQ_account_user_id')) {
+                errorMessage = 'User already has an account';
+            } else if (error.message.includes('UQ_account_mnemonic')) {
+                errorMessage = 'Account mnemonic already exists';
+            }
             return new APIError({
-                message: 'Account already exists',
+                message: errorMessage,
                 status: httpStatus.CONFLICT,
                 isPublic: true,
             });
         }
         return error;
     }
+    
 }

@@ -1,10 +1,12 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { Keyring } = require('@polkadot/keyring');
-const { agaProvider: provider } = require('../../../config/vars');
+const { bscProvider: provider, bscProvider } = require('../../../config/vars');
 const httpStatus = require('http-status');
 const APIError = require('../../errors/api-error');
 const BigNumber = require('bignumber.js');
 const { formatDecimalsFromToken } = require('../../utils/helper');
+
+const { JsonRpcProvider, formatEther, formatUnits, Contract } = require("ethers");
 const Asset = require('../../models/asset.model');
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require('../../utils/constants');
 
@@ -100,6 +102,44 @@ exports.substrateTransferAsset = async (transferAssetObject) => {
     }
 };
 
+exports.getAccountNativeTokenBalance = async (walletAddress) => {
+    // (i.e. ``http:/\/localhost:8545``)
+    const provider = new JsonRpcProvider(bscProvider);
+    // Get the BNB balance of the wallet
+    const balance = await provider.getBalance(walletAddress);
+
+    return {
+        balance: formatEther(balance)
+    }
+    
+        // // ERC-20 contract address (replace with the contract address you provided)
+        // const contractAddress = '0xCd89AB6fC955e3092B20fa81990808581740d7f6';
+
+        // // Minimal ERC-20 ABI
+        // const ERC20_ABI = [
+        //     "function balanceOf(address owner) view returns (uint256)"
+        // ];
+
+        // // Create an instance of the contract
+        // const contract = new Contract(contractAddress, ERC20_ABI, provider);
+
+        //  // Call the balanceOf function to get the balance of the wallet address
+        //  const balance = await contract.balanceOf(walletAddress);
+              
+        //  // Most ERC-20 tokens use 18 decimals, so format the result to get the human-readable value
+        //  const formattedBalance = formatUnits(balance, 18);
+         
+        // async function getTokenBalance() {
+        //     try {
+             
+          
+        //       console.log(`Token Balance: ${formattedBalance} tokens`);
+        //     } catch (error) {
+        //       console.error('Error fetching balance:', error);
+        //     }
+        // }  
+        // getTokenBalance();
+}
 
 exports.getTransactionDetails = async (txHash) => {
     const wsProvider = new WsProvider(provider)
@@ -258,7 +298,7 @@ exports.listAssets = async () => {
         const result = await Asset.list({
             limit: DEFAULT_QUERY_LIMIT, 
             offset: DEFAULT_QUERY_OFFSET, 
-            condition: `asset_network_id=${1}`, 
+            condition: `asset_network_id=${2}`, 
             sortBy: "asset_id", 
             orderBy: "asc"
         })
@@ -275,36 +315,6 @@ exports.listAssets = async () => {
         return { assets: assets }
      } catch (error) {
          console.log(error)
-     }
-}
-
-exports.listAssetsNotUSed = async () => {
-    // Connect to the blockchain node
-    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
-    const api = await ApiPromise.create({ provider: wsProvider });
-
-    try {
-        let chainAssets = [];
-        const assets = await api.query.assets.asset.keys();
-        
-        for (let asset of assets) {
-            const assetId = asset.args[0].toHuman();
-            const assetDetails = await api.query.assets.asset(assetId);
-            const assetMetadata = await api.query.assets.metadata(assetId);
-            const assetData = {
-                asset_id: assetId,
-                asset_details: assetDetails.toHuman(),
-                asset_metadata: assetMetadata.toHuman()
-            }
-            chainAssets.push(assetData)
-        }
-
-        return { assets: chainAssets }
-     } catch (error) {
-         console.log(error)
-     } finally {
-         // Disconnect from the node
-         await api.disconnect();
      }
 }
 

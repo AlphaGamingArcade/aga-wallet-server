@@ -22,6 +22,7 @@ module.exports = class SQLFunctions {
         const { tablename, columns, multipleValues } = params;
         const valuesString = multipleValues.map(values => `(${values.join(', ')})`).join(', ');
         const query = `INSERT INTO ${tablename} (${columns.join(', ')}) VALUES ${valuesString}`;
+        console.log(query)
         const request = db.request();
         await request.query(query);
         return { responseCode: 0 };
@@ -111,20 +112,19 @@ module.exports = class SQLFunctions {
       }
     }
 
-    static selectLeftJoinSingle = async (params) => {
+    static selectLeftJoinQuery = async (params) => {
       let db = await connectDb();
       try {
         const query = await db
           .request()
-          .query(`select ${params.join} where ${params.condition}`);
-        return { responsecode: 0, data: query.recordset[0] };
+          .query(`select ${params.columns.join(', ')} from  ${params.tablename} LEFT JOIN ${params.leftJoin} where ${params.condition}`);
+        return { responsecode: 0, data: query.recordset };
       } catch (error) {
+        console.log(error)
         const message = "Invalid JOIN QUERY";
         throw new Error(message);
       } finally {
         db.release();
       }
     };
-
-
   };

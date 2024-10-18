@@ -62,15 +62,17 @@ create table wallet_log(
     log_updated_at DATETIME DEFAULT GETDATE()
 )
 
+
 CREATE TABLE wallet_asset(
     asset_id int IDENTITY(1, 1) PRIMARY KEY NOT NULL,
-    asset_name varchar(50) NOT NULL UNIQUE,
-    asset_network varchar(50) NOT NULL,
-    asset_symbol varchar(20) NOT NULL UNIQUE,
-    asset_icon varchar(250) NOT NULL,
-    asset_created_at DATETIME DEFAULT GETDATE(),
-    asset_updated_at DATETIME DEFAULT GETDATE()
+    asset_network_id int NOT NULL,
+    asset_name varchar(50) NOT NULL,
+    asset_symbol varchar(20) NOT NULL,
+    asset_decimal int NOT NULL,
+    asset_native char(1) NOT NULL, -- If native is 'y'
+    asset_contract varchar(250) -- Can be null if native is y
 );
+
 
 CREATE TABLE wallet_notification (
     notification_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
@@ -106,13 +108,15 @@ CREATE TABLE wallet_messaging (
 CREATE TABLE wallet_account (
     account_id INT IDENTITY(1, 1) PRIMARY KEY,
     account_user_id INT NOT NULL,
-    account_code VARCHAR(128) NULL UNIQUE,
+    account_code VARCHAR(128) NULL,
     account_status CHAR(1) NOT NULL, -- A for active, I for inactive
-    account_mnemonic VARCHAR(256) NOT NULL UNIQUE, -- Increased size for mnemonic
-    account_address VARCHAR(256) NOT NULL UNIQUE,
+    account_mnemonic VARCHAR(256) NOT NULL, -- Increased size for mnemonic
     account_password VARCHAR(256) NOT NULL, -- Increased size for password
     account_created_at DATETIME DEFAULT GETDATE(),
-    account_updated_at DATETIME DEFAULT GETDATE()
+    account_updated_at DATETIME DEFAULT GETDATE(),
+    CONSTRAINT UQ_account_user_id UNIQUE (account_user_id), -- for checking duplicate error handling
+    CONSTRAINT UQ_account_code UNIQUE (account_code), -- for checking duplicate error handling
+    CONSTRAINT UQ_account_mnemonic UNIQUE (account_mnemonic) -- for checking duplicate error handling
 );
 
 CREATE TABLE wallet_qr_room (

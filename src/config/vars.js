@@ -13,5 +13,6 @@ module.exports = {
     password: process.env.EMAIL_PASSWORD,
   },
   connectionString: process.env.CONNECTION_STRING,
-  provider: process.env.PROVIDER
+  agaProvider: process.env.AGA_PROVIDER,
+  bscProvider: process.env.BSC_PROVIDER
 };

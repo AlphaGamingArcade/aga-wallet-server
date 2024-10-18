@@ -27,6 +27,7 @@
     "decimal.js": "^10.4.3",
     "dotenv": "^16.4.5",
     "email-templates": "^11.1.1",
+    "ethers": "^6.13.3",
     "express": "^4.19.2",
     "express-validation": "^4.1.1",
     "firebase-admin": "^12.4.0",
