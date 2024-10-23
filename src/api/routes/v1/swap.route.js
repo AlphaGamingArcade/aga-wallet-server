@@ -5,6 +5,11 @@ const { authorize } = require('../../middlewares/auth');
 const { swapChecker } = require('../../middlewares/swapChecker');
 
 router
-    .route('/')
+    .route ('/')
     .get(swapChecker, controller.listSwaps)
+
+router
+    .route('/token')
+    .post(swapChecker, controller.swapToken);
+
 module.exports = router
