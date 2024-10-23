@@ -7,6 +7,7 @@ const BigNumber = require('bignumber.js');
 const { formatDecimalsFromToken } = require('../../utils/helper');
 const Asset = require('../../models/asset.model');
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require('../../utils/constants');
+const { u8aToHex } = require('@polkadot/util');
 
 exports.convertToPlanks = (amountPerUnit) => {
     const plancksPerUnit = 1000000000000;
@@ -383,3 +384,55 @@ exports.getAccountTokensBalance = async (walletAddress) => {
       assets: myAssetTokenData,
     };
   };
+
+/**
+ * Asset Conversion
+ */
+
+exports.getSwaps = async () => {
+    try {
+      const wsProvider = new WsProvider(provider);
+      const apiInstance = await ApiPromise.create({ provider: wsProvider });
+      const swapEntries = await apiInstance.query.assets.asset.entries();
+  
+      return swapEntries.map(([key, asset]) => ({
+        assetId: key.args[0].toString(),
+        assetDetails: asset.toHuman(),
+      }));
+    } catch (error) {
+      throw new Error('Failed to fetch swaps');
+    }
+  };
+  
+
+exports.getQuoteExactTokensForTokens = async (pair, amountValue, includeFee) => {
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+  
+    try {
+      const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
+      const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
+      const amount = api.createType('u128', amountValue).toU8a();
+      const includeFeeValue = api.createType('bool', includeFee).toU8a();
+  
+      const encodedInput = new Uint8Array(asset1.length + asset2.length + amount.length + includeFeeValue.length);
+      encodedInput.set(asset1, 0);
+      encodedInput.set(asset2, asset1.length);
+      encodedInput.set(amount, asset1.length + asset2.length);
+      encodedInput.set(includeFeeValue, asset1.length + asset2.length + amount.length);
+  
+      const encodedInputHex = u8aToHex(encodedInput);
+      const response = await api.rpc.state.call('AssetConversionApi_quote_price_exact_tokens_for_tokens', encodedInputHex);
+      const decodedPrice = api.createType('Option<u128>', response);
+  
+      return decodedPrice.toHuman();
+    } catch (error) {
+      throw new APIError({
+        status: httpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to get swap quote',
+      });
+    } finally {
+      await api.disconnect();
+    }
+  };
+  
