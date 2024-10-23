@@ -388,66 +388,51 @@ exports.getAccountTokensBalance = async (walletAddress) => {
 /**
  * Asset Conversion
  */
-exports.getQuoteExactTokensForTokens = async (pair, amountValue) => {
-    // Connect to blockchain node
+
+exports.getSwaps = async () => {
+    try {
+      const wsProvider = new WsProvider(provider);
+      const apiInstance = await ApiPromise.create({ provider: wsProvider });
+      const swapEntries = await apiInstance.query.assets.asset.entries();
+  
+      return swapEntries.map(([key, asset]) => ({
+        assetId: key.args[0].toString(),
+        assetDetails: asset.toHuman(),
+      }));
+    } catch (error) {
+      throw new Error('Failed to fetch swaps');
+    }
+  };
+  
+
+exports.getQuoteExactTokensForTokens = async (pair, amountValue, includeFee) => {
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
   
     try {
-      let asset1, asset2;
-  
-      // Determine the assets dynamically based on the input pair direction
-      if (pair.Native === null && pair.With_Id !== undefined) {
-        // Convert from Native to With_Id
-        asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', { "Native": null }).toU8a();
-        asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', { "WithId": pair.With_Id }).toU8a();
-      } else if (pair.With_Id !== undefined && pair.Native === null) {
-        // Convert from With_Id to Native
-        asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', { "WithId": pair.With_Id }).toU8a();
-        asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', { "Native": null }).toU8a();
-      } else {
-        // Invalid pair, throw an error
-        throw new APIError({
-          status: httpStatus.BAD_REQUEST,
-          message: "Invalid pair values. You must provide either Native or With_Id in the pair object.",
-        });
-      }
-  
-      // Convert amount to u128
+      const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
+      const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
       const amount = api.createType('u128', amountValue).toU8a();
-      const includeFee = api.createType('bool', true).toU8a();
+      const includeFeeValue = api.createType('bool', includeFee).toU8a();
   
-      // Encode input parameters
-      const encodedInput = new Uint8Array(asset1.length + asset2.length + amount.length + includeFee.length);
+      const encodedInput = new Uint8Array(asset1.length + asset2.length + amount.length + includeFeeValue.length);
       encodedInput.set(asset1, 0);
       encodedInput.set(asset2, asset1.length);
       encodedInput.set(amount, asset1.length + asset2.length);
-      encodedInput.set(includeFee, asset1.length + asset2.length + amount.length);
+      encodedInput.set(includeFeeValue, asset1.length + asset2.length + amount.length);
   
       const encodedInputHex = u8aToHex(encodedInput);
-  
-      // Debugging output: Print encoded inputs
-      console.log("Encoded Input Hex:", encodedInputHex);
-      console.log("Asset 1:", asset1);
-      console.log("Asset 2:", asset2);
-      console.log("Amount:", amount);
-      console.log("Include Fee:", includeFee);
-  
-      // Call the RPC method to get the quote
       const response = await api.rpc.state.call('AssetConversionApi_quote_price_exact_tokens_for_tokens', encodedInputHex);
       const decodedPrice = api.createType('Option<u128>', response);
   
-      console.log("Decoded Price:", decodedPrice.toHuman());
-  
       return decodedPrice.toHuman();
     } catch (error) {
-      console.error('Error in getQuoteExactTokensForTokens:', error);
       throw new APIError({
         status: httpStatus.INTERNAL_SERVER_ERROR,
         message: 'Failed to get swap quote',
       });
     } finally {
-      // Disconnect the API instance after completion
       await api.disconnect();
     }
   };
+  
