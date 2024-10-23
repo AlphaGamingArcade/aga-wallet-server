@@ -19,7 +19,6 @@ exports.swapToken = async (req, res) => {
     const { pair, amount, include_fee } = req.body;
     const swapDetails = await calculateSwapQuoteAndFee(pair, amount, include_fee);
     return res.status(httpStatus.OK).json({
-      message: 'Swap token request received',
       swap_details: swapDetails,
     });
   } catch (error) {
