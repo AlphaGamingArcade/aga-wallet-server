@@ -7,6 +7,7 @@ const BigNumber = require('bignumber.js');
 const { formatDecimalsFromToken } = require('../../utils/helper');
 const Asset = require('../../models/asset.model');
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require('../../utils/constants');
+const { u8aToHex } = require('@polkadot/util');
 
 exports.convertToPlanks = (amountPerUnit) => {
     const plancksPerUnit = 1000000000000;
@@ -22,6 +23,8 @@ exports.convertPlanckToDecimal = (amountInPlanck) => {
 exports.substrateTransferAsset = async (transferAssetObject) => {
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
     const { senderMnemonic, senderAddress, recipientAddress, amount } = transferAssetObject;
   
     try {
@@ -104,6 +107,8 @@ exports.substrateTransferAsset = async (transferAssetObject) => {
 exports.getTransactionDetails = async (txHash) => {
     const wsProvider = new WsProvider(provider)
     const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
     try {
       // returns SignedBlock
       const signedBlock = await api.rpc.chain.getBlock(txHash);
@@ -122,6 +127,8 @@ exports.getTransactionDetails = async (txHash) => {
 exports.getBlockByHash = async (blockHash) => {
     const wsProvider = new WsProvider(provider)
     const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
     try {
         // returns SignedBlock
         const signedBlock = await api.rpc.chain.getBlock(blockHash);
@@ -141,6 +148,7 @@ exports.getBlockByHash = async (blockHash) => {
 exports.getAccountsBalance = async (addresses) => {
     const wsProvider = new WsProvider(provider)
     const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
     try {
         const balancesPromise = new Promise((resolve, reject) => {
             api.query.system.account.multi([...addresses], (balances) => {
@@ -183,6 +191,7 @@ exports.getAccountsBalance = async (addresses) => {
 exports.getAccountBalance = async (address) => {
     const wsProvider = new WsProvider(provider)
     const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
     try {
         // Retrieve the account balance & nonce via the system module
         const { data } = await api.query.system.account(address);
@@ -213,7 +222,8 @@ exports.getTransactions = async (options) => {
     // Connect to the blockchain node
     const wsProvider = new WsProvider(provider); // Replace with your node endpoint
     const api = await ApiPromise.create({ provider: wsProvider });
-  
+    await api.isReady;
+
     try {
        // Fetch the latest block number
         const latestHeader = await api.rpc.chain.getHeader();
@@ -274,7 +284,7 @@ exports.listAssets = async () => {
 
         return { assets: assets }
      } catch (error) {
-         console.log(error)
+        console.log(error)
      }
 }
 
@@ -312,6 +322,8 @@ exports.getChainProperties = async () => {
      // Connect to the blockchain node
     const wsProvider = new WsProvider(provider); // Replace with your node endpoint
     const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
     try {
         const tokenMetadata = api.registry.getChainProperties();
         return tokenMetadata
@@ -324,6 +336,7 @@ exports.getAccountTokensBalance = async (walletAddress) => {
     // Connect to the blockchain node
     const wsProvider = new WsProvider(provider); // Replace with your node endpoint
     const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
 
     const now = await api.query.timestamp.now();
     const { nonce, data: balance } = await api.query.system.account(walletAddress);
@@ -382,4 +395,88 @@ exports.getAccountTokensBalance = async (walletAddress) => {
       tokenSymbol: Array.isArray(tokenSymbol) ? tokenSymbol?.[0] : "",
       assets: myAssetTokenData,
     };
+};
+
+
+exports.getPools = async () => {
+    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
+    try {
+        const pools = await api.query.assetConversion.pools.entries();
+        return pools.map(([key, value]) => [key.args[0], value ])
+    } catch (error) {
+        console.log(error)
+    } finally {
+        await api.disconnect();
+    }
+}
+
+exports.getReserves = async (pair) => {
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
+    try {
+        const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
+        const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
+
+        // concatenate  Uint8Arrays of input parameters
+        const encodedInput = new Uint8Array(asset1.length + asset2.length);
+        encodedInput.set(asset1, 0); // Set array1 starting from index 0
+        encodedInput.set(asset2, asset1.length); // Set array2 starting from the end of array1
+      
+        // create Hex from concatenated u8a
+        const encodedInputHex = u8aToHex(encodedInput);
+      
+        // call rpc state call where first parameter is method to be called and second one is Hex representation of encoded input parameters
+        const reserves = await api.rpc.state.call('AssetConversionApi_get_reserves', encodedInputHex)
+      
+        // decode response
+        const decoded = api.createType('Option<(u128, u128)>', reserves);
+        return decoded.toHuman()
+    } catch (error) {
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving reserves.',
+        });
+    } finally {
+        await api.disconnect();
+    }
+}
+
+exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee) => {
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
+    try {
+      const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
+      const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
+      const amount = api.createType('u128', amountValue).toU8a();
+      const includeFeeValue = api.createType('bool', includeFee).toU8a();
+  
+      const encodedInput = new Uint8Array(asset1.length + asset2.length + amount.length + includeFeeValue.length);
+      encodedInput.set(asset1, 0);
+      encodedInput.set(asset2, asset1.length);
+      encodedInput.set(amount, asset1.length + asset2.length);
+      encodedInput.set(includeFeeValue, asset1.length + asset2.length + amount.length);
+  
+      const encodedInputHex = u8aToHex(encodedInput);
+      const response = await api.rpc.state.call('AssetConversionApi_quote_price_exact_tokens_for_tokens', encodedInputHex);
+      const decodedPrice = api.createType('Option<u128>', response);
+  
+      return decodedPrice.toString();
+    } catch (error) {
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed to get swap quote',
+        });
+    } finally {
+      await api.disconnect();
+    }
   };
+  

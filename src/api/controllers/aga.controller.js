@@ -2,6 +2,7 @@ const httpStatus = require("http-status");
 const agaProvider = require("./../services/chains/agaProvider");
 const Account = require("../models/account.model");
 const { Keyring } = require('@polkadot/keyring');
+const { default: Decimal } = require("decimal.js");
 
 exports.get = async (req, res) => {
     res.send("AGA")
@@ -58,6 +59,61 @@ exports.accountListAssets = async (req, res, next) => {
         const assets = { assets: [nativeAsset, ...tokens] }
         res.status(httpStatus.OK);
         return res.json(assets)
+    } catch (error) {
+        return next(error)
+    }
+}
+
+exports.getPools = async (_req, res, next) => {
+    try {
+        const pools = await agaProvider.getPools();
+        return res.json({ pools: pools })
+    } catch (error) {
+        return next(error)
+    }
+}
+
+exports.getQuotePriceExactTokensForTokens = async (req, res, next) => {
+    try {
+        const { pair, amount } = req.body;
+        const [reserves, noFeeQuotePriceExactTokens, withFeeQuotePriceExactTokens] = await Promise.all([
+            agaProvider.getReserves(pair),
+            agaProvider.getQuotePriceExactTokensForTokens(pair, amount, false),
+            agaProvider.getQuotePriceExactTokensForTokens(pair, amount, true)
+        ]);
+
+        const swapFee = new Decimal(noFeeQuotePriceExactTokens.replace(/[, ]/g, ""))
+            .minus(withFeeQuotePriceExactTokens);
+
+        const reservesBeforeSwap = [
+            new Decimal(reserves[0].replace(/[, ]/g, "")).mul(1),
+            new Decimal(reserves[1].replace(/[, ]/g, "")).mul(1)
+        ]
+
+        const oldRate = new Decimal(reservesBeforeSwap[0])
+        .div(reservesBeforeSwap[1])
+
+        const reservesAfterSwap = [
+            new Decimal(reserves[0].replace(/[, ]/g, ""))
+                .add(amount),
+            new Decimal(reserves[1].replace(/[, ]/g, ""))
+                .minus(withFeeQuotePriceExactTokens)
+        ]
+
+        const newRate = new Decimal(reservesAfterSwap[0])
+            .div(reservesAfterSwap[1])
+        
+        const priceImpact = new Decimal(newRate)
+            .minus(oldRate)
+            .div(oldRate)
+            .mul(100);
+
+        return res.json({
+            pair,
+            quote_amount: withFeeQuotePriceExactTokens,
+            swap_fee: swapFee,
+            price_impact_in_percent: priceImpact
+        })
     } catch (error) {
         return next(error)
     }
