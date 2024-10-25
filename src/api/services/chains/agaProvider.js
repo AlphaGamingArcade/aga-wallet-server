@@ -480,3 +480,22 @@ exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee
     }
   };
   
+  exports.swapExactTokensForTokens = async (pair, amountValue) => {
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
+    try {
+        
+
+
+    } catch (error) {
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed to get swap quote',
+        });
+    } finally {
+        await api.disconnect();
+    }
+  }
