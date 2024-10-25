@@ -8,7 +8,6 @@ const { formatDecimalsFromToken } = require('../../utils/helper');
 const Asset = require('../../models/asset.model');
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require('../../utils/constants');
 const { u8aToHex } = require('@polkadot/util');
-const { u8aToHex } = require('@polkadot/util');
 
 exports.convertToPlanks = (amountPerUnit) => {
     const plancksPerUnit = 1000000000000;
