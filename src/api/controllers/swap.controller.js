@@ -1,16 +1,30 @@
-const httpStatus = require("http-status");
-const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require("../utils/constants");
+const httpStatus = require('http-status');
+const { getSwaps } = require('../services/chains/agaProvider');
+const { calculateSwapQuoteAndFee } = require('../middlewares/swapChecker');
 
-
-exports.listSwaps = (req, res, next) => {
+exports.listSwaps = async (req, res) => {
   try {
-    
-    return res.json({
-      swaps: [
-        
-      ]
-    })
+    const swaps = await getSwaps();
+    return res.json({ swaps });
   } catch (error) {
-    return next(error)
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to fetch swaps',
+      error: error.message,
+    });
   }
-} 
+};
+
+exports.swapToken = async (req, res) => {
+  try {
+    const { pair, amount, include_fee } = req.body;
+    const swapDetails = await calculateSwapQuoteAndFee(pair, amount, include_fee);
+    return res.status(httpStatus.OK).json({
+      swap_details: swapDetails,
+    });
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to calculate swap quote',
+      error: error.message,
+    });
+  }
+};
