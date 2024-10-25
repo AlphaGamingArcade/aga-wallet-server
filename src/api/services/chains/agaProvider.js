@@ -395,32 +395,63 @@ exports.getAccountTokensBalance = async (walletAddress) => {
       tokenSymbol: Array.isArray(tokenSymbol) ? tokenSymbol?.[0] : "",
       assets: myAssetTokenData,
     };
-  };
+};
 
-/**
- * Asset Conversion
- */
 
-exports.getSwaps = async () => {
+exports.getPools = async () => {
+    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
     try {
-      const wsProvider = new WsProvider(provider);
-      const apiInstance = await ApiPromise.create({ provider: wsProvider });
-      const swapEntries = await apiInstance.query.assets.asset.entries();
-  
-      return swapEntries.map(([key, asset]) => ({
-        assetId: key.args[0].toString(),
-        assetDetails: asset.toHuman(),
-      }));
+        const pools = await api.query.assetConversion.pools.entries();
+        return pools.map(([key, value]) => [key.args[0], value ])
     } catch (error) {
-      throw new Error('Failed to fetch swaps');
+        console.log(error)
+    } finally {
+        await api.disconnect();
     }
-  };
-  
+}
 
-exports.getQuoteExactTokensForTokens = async (pair, amountValue, includeFee) => {
+exports.getReserves = async (pair) => {
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
-  
+    await api.isReady;
+
+    try {
+        const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
+        const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
+
+        // concatenate  Uint8Arrays of input parameters
+        const encodedInput = new Uint8Array(asset1.length + asset2.length);
+        encodedInput.set(asset1, 0); // Set array1 starting from index 0
+        encodedInput.set(asset2, asset1.length); // Set array2 starting from the end of array1
+      
+        // create Hex from concatenated u8a
+        const encodedInputHex = u8aToHex(encodedInput);
+      
+        // call rpc state call where first parameter is method to be called and second one is Hex representation of encoded input parameters
+        const reserves = await api.rpc.state.call('AssetConversionApi_get_reserves', encodedInputHex)
+      
+        // decode response
+        const decoded = api.createType('Option<(u128, u128)>', reserves);
+        return decoded.toHuman()
+    } catch (error) {
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving reserves.',
+        });
+    } finally {
+        await api.disconnect();
+    }
+}
+
+exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee) => {
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
     try {
       const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
       const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
@@ -437,12 +468,13 @@ exports.getQuoteExactTokensForTokens = async (pair, amountValue, includeFee) => 
       const response = await api.rpc.state.call('AssetConversionApi_quote_price_exact_tokens_for_tokens', encodedInputHex);
       const decodedPrice = api.createType('Option<u128>', response);
   
-      return decodedPrice.toHuman();
+      return decodedPrice.toString();
     } catch (error) {
-      throw new APIError({
-        status: httpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Failed to get swap quote',
-      });
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed to get swap quote',
+        });
     } finally {
       await api.disconnect();
     }
