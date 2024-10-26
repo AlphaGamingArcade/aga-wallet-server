@@ -480,28 +480,82 @@ exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee
     }
   };
   
-  exports.swapExactTokensForTokens = async (wallet, pair, amountValue) => {
+  exports.swapExactTokensForTokens = async (mnemonic, pair, amountValue, minAmountValue) => {
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
     await api.isReady;
-
     try {
-        const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
-        const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
-        
-        // Sign and send a transfer from Alice to Bob
-        const txHash = await api.tx.assetConversion
-            .swap_exact_tokens_for_tokens(BOB, 12345)
-            .signAndSend(wallet);
+        const keyring = new Keyring({ type: 'sr25519' });
+        const sender = keyring.addFromMnemonic(mnemonic);
+        const { nonce } = await api.query.system.account(sender.address);
+        const timestamp = await api.query.timestamp.now();
 
-        // Show the hash
-        console.log(`Submitted with hash ${txHash}`);
+        const swap = api.tx.assetConversion.swapExactTokensForTokens(
+            [pair[0], pair[1]], // path array
+            amountValue, // amount of tokens to swap
+            minAmountValue, // minimum amount of token2 user wants to receive
+            sender.address, // address to receive swapped tokens
+            false // Keep alive parameter
+        )
+        const result = await new Promise((resolve, reject) => {
+            swap.signAndSend(sender, { nonce }, ({ events = [], status }) => {
+            if (status.isInBlock) {
+                let success = false;
+                let errorMsg = '';
+    
+                events.forEach(({ event: { data, method, section }, phase }) => {
+                    if (section === 'system' && method === 'ExtrinsicFailed') {
+                        const [dispatchError] = data;
+                        if (dispatchError.isModule) {
+                        const decoded = api.registry.findMetaError(dispatchError.asModule);
+                        const { documentation, name, section } = decoded;
+        
+                        errorMsg = `${section}.${name}: ${documentation.join(' ')}`;
+                        } else {
+                        errorMsg = dispatchError.toString();
+                        }
+                    } else if (section === 'system' && method === 'ExtrinsicSuccess') {
+                        success = true;
+                    }
+                });
+    
+                if (success) {
+                    resolve({
+                        message: `Transaction included in block: ${status.asInBlock.toHex()}`,
+                        block_hash: status.asInBlock.toHex(),
+                        transaction_hash: swap.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
+                        success: true
+                    });
+                } else {
+                    resolve({
+                        message: `Transaction failed: ${errorMsg}`,
+                        block_hash: status.asInBlock.toHex(),
+                        transaction_hash: swap.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
+                        success: false
+                    });
+                }
+            } else if (status.isFinalized) {
+                resolve({
+                    message: `Transaction finalized in block: ${status.asFinalized.toHex()}`,
+                    block_hash: status.asFinalized.toHex(),
+                    transaction_hash: swap.hash.toHex(),
+                    timestamp: timestamp.toNumber().toString(),
+                    success: true
+                });
+            }
+            }).catch(error => {
+                reject(error);
+            });
+        });
+        return result;
 
     } catch (error) {
         console.log(error)
         throw new APIError({
             status: httpStatus.INTERNAL_SERVER_ERROR,
-            message: 'Failed to get swap quote',
+            message: error.message,
         });
     } finally {
         await api.disconnect();

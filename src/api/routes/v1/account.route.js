@@ -2,7 +2,8 @@ const expresss = require("express")
 const { validate } = require('express-validation');
 const accountController = require('../../controllers/account.controller');
 const transactionController = require('../../controllers/transaction.controller');
-const { getAccount } = require("../../validations/account.validation");
+const agaController = require('../../controllers/aga.controller');
+const { getAccount, accountSwapExactTokensForTokens } = require("../../validations/account.validation");
 const { authorize } = require("../../middlewares/auth");
 const { listAccountTransactions, sendTransaction } = require("../../validations/transaction.validation");
 const { authorizeCloudMessaging } = require('../../middlewares/cloudMessaging');
@@ -23,5 +24,12 @@ router.route('/:account_address/transactions')
 router
   .route('/:account_address/transactions/send')
   .post(authorize(), validate(sendTransaction), authorizeCloudMessaging(), transactionController.send)
+
+/**
+ * SWAPS
+ */
+router
+  .route('/:account_address/swaps/swap-exact-tokens-for-tokens')
+  .post(validate(accountSwapExactTokensForTokens), agaController.swapExactTokensForTokens); 
 
 module.exports = router

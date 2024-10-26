@@ -121,11 +121,14 @@ exports.getQuotePriceExactTokensForTokens = async (req, res, next) => {
 
 exports.swapExactTokensForTokens = async (req, res, next) => {
     try {
-        const { pair, amount } = req.body;
-        
-        
-        
+        const { pair, amount_in, amount_out_min, password } = req.body;
+        const account = await Account.getByAddress(req.params.account_address, 
+            ['account_mnemonic', 'account_password']
+        )
+        const mnemonic = await Account.decryptMnemonic(account, password);
+        const result = await agaProvider.swapExactTokensForTokens(mnemonic, pair, amount_in, amount_out_min);
+        return res.json(result)
     } catch (error) {
         return next(error)  
-    } 
+    }
 }

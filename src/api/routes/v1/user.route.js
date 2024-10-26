@@ -86,11 +86,4 @@ router
   .route('/:user_id/accounts/:account_address')
   .get(authorize(LOGGED_USER), validate(getUserAccount), accountController.get);
 
-/**
- * SWAPS
- */
-router
-  .route('/:user_id/accounts/:account_address/swaps/swap-exact-tokens-for-tokens')
-  .post(authorize(LOGGED_USER), validate(userAccountSwapExactTokensForTokens), agaController.swapExactTokensForTokens);
-  
 module.exports = router;
