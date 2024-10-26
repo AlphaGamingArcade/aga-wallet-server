@@ -3,7 +3,7 @@ const router = express.Router();
 const agaController = require("./../../controllers/aga.controller");
 const { getAddress } = require("../../validations/bsc.validation");
 const { validate } = require("express-validation");
-const { getQuotePriceExactTokensForTokens } = require("../../validations/aga.validation");
+const { getQuotePriceExactTokensForTokens, accountListAssets } = require("../../validations/aga.validation");
 
 router.route('/')
     .get(agaController.get);
@@ -15,8 +15,7 @@ router.route('/assets')
     .get(agaController.listAssets);
 
 router.route('/accounts/:account_id/assets')
-    .get(agaController.accountListAssets);
-
+    .get(validate(accountListAssets), agaController.accountListAssets);
 
 router.route('/swaps/pools')
     .get(agaController.getPools);

@@ -118,3 +118,14 @@ exports.getQuotePriceExactTokensForTokens = async (req, res, next) => {
         return next(error)
     }
 }
+
+exports.swapExactTokensForTokens = async (req, res, next) => {
+    try {
+        const { pair, amount } = req.body;
+        
+        
+        
+    } catch (error) {
+        return next(error)  
+    } 
+}

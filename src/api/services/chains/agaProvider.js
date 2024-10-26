@@ -480,14 +480,22 @@ exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee
     }
   };
   
-  exports.swapExactTokensForTokens = async (pair, amountValue) => {
+  exports.swapExactTokensForTokens = async (wallet, pair, amountValue) => {
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
     await api.isReady;
 
     try {
+        const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
+        const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
         
+        // Sign and send a transfer from Alice to Bob
+        const txHash = await api.tx.assetConversion
+            .swap_exact_tokens_for_tokens(BOB, 12345)
+            .signAndSend(wallet);
 
+        // Show the hash
+        console.log(`Submitted with hash ${txHash}`);
 
     } catch (error) {
         console.log(error)

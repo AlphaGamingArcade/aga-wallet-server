@@ -79,6 +79,8 @@ exports.listUserAccounts = async (req, res, next) => {
       offset: query.offset || DEFAULT_QUERY_OFFSET
     });
 
+    console.log(result)
+
     res.status(httpStatus.OK);
     return res.json({ accounts: result.accounts, metadata: result.metadata });
   } catch (error) {

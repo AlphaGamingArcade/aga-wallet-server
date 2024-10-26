@@ -5,6 +5,7 @@ const notificationController = require('../../controllers/notification.controlle
 const walletController = require('../../controllers/wallet.controller');
 const messagingController = require('../../controllers/messaging.controller');
 const accountController = require('../../controllers/account.controller')
+const agaController = require('../../controllers/aga.controller')
 
 const { authorize, ADMIN, LOGGED_USER } = require('../../middlewares/auth');
 const {
@@ -17,7 +18,7 @@ const {
 const { getUserNotification, deleteUserNotification, listUserNotifications, updateUserNotification } = require('../../validations/notification.validator');
 const { listWallets } = require('../../validations/wallet.validation');
 const { listUserMessagings, getUserMessaging } = require('../../validations/messaging.validation');
-const { listUserAccounts, getUserAccount, createUserAccount } = require('../../validations/account.validation');
+const { listUserAccounts, getUserAccount, createUserAccount, userAccountSwapExactTokensForTokens } = require('../../validations/account.validation');
 
 const router = express.Router();
 
@@ -84,5 +85,12 @@ router
 router
   .route('/:user_id/accounts/:account_address')
   .get(authorize(LOGGED_USER), validate(getUserAccount), accountController.get);
+
+/**
+ * SWAPS
+ */
+router
+  .route('/:user_id/accounts/:account_address/swaps/swap-exact-tokens-for-tokens')
+  .post(authorize(LOGGED_USER), validate(userAccountSwapExactTokensForTokens), agaController.swapExactTokensForTokens);
   
 module.exports = router;
