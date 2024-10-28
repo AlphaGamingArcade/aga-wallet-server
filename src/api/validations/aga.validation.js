@@ -22,6 +22,6 @@ module.exports = {
             ).min(1).required(), // Ensure the pair array has at least one object
             amount: Joi.string().required(), // amount is required and must be a number
         })
-    }
+    },
     
 }

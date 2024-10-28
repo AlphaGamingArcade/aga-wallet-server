@@ -65,5 +65,23 @@ module.exports = {
             amount_out_min: Joi.string().required(), // amount is required and must be a number
             password: Joi.string().required()
         })
+    },
+    accountAddLiquidityPool: {
+        params: Joi.object({
+            account_address: Joi.string().required()
+        }),
+        body: Joi.object({
+            pair: Joi.array().items(
+                Joi.object({
+                    Native: Joi.any().valid(null).optional(), // Native can be null
+                    WithId: Joi.number().optional() // WithId can be a number
+                }).xor('Native', 'WithId') // Ensure that either Native or WithId is present, but not both
+            ).min(1).required(), // Ensure the pair array has at least one object
+            amount1_desired: Joi.string().required(), 
+            amount2_desired: Joi.string().required(), 
+            amount1_min: Joi.string().required(), 
+            amount2_min: Joi.string().required(),
+            password: Joi.string().required()
+        })
     }
 }

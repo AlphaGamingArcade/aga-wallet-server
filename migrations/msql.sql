@@ -62,9 +62,9 @@ create table wallet_log(
     log_updated_at DATETIME DEFAULT GETDATE()
 )
 
-
 CREATE TABLE wallet_asset(
     asset_id int IDENTITY(1, 1) PRIMARY KEY NOT NULL,
+    asset_account_id int NOT NULL,
     asset_network_id int NOT NULL,
     asset_name varchar(50) NOT NULL,
     asset_symbol varchar(20) NOT NULL,
@@ -73,6 +73,14 @@ CREATE TABLE wallet_asset(
     asset_contract varchar(250) -- Can be null if native is y
 );
 
+CREATE TABLE wallet_liquidity_pool(
+    lp_id int IDENTITY(1, 1) PRIMARY KEY NOT NULL,
+    lp_account_id int NOT NULL,
+    lp_name varchar(50) NOT NULL,
+    lp_symbol varchar(20) NOT NULL,
+    lp_decimal int NOT NULL,
+    asset_contract varchar(250) -- Can be null if native is y
+);
 
 CREATE TABLE wallet_notification (
     notification_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,

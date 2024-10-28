@@ -132,3 +132,19 @@ exports.swapExactTokensForTokens = async (req, res, next) => {
         return next(error)  
     }
 }
+
+
+exports.addLiquidityPool = async (req, res, next) => {
+    try {
+        const { amount1_desired, amount2_desired, amount1_min, amount2_min, password } = req.body;
+        const account = await Account.getByAddress(req.params.account_address, 
+            ['account_mnemonic', 'account_password']
+        )
+        const mnemonic = await Account.decryptMnemonic(account, password);
+
+        return res.json({ message: "Add Liquidity Pool"})
+
+    } catch (error) {
+        return next(error)
+    }
+}

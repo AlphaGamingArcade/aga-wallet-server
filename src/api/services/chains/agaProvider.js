@@ -480,7 +480,7 @@ exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee
     }
   };
   
-  exports.swapExactTokensForTokens = async (mnemonic, pair, amountValue, minAmountValue) => {
+exports.swapExactTokensForTokens = async (mnemonic, pair, amountValue, minAmountValue) => {
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
     await api.isReady;
@@ -560,4 +560,4 @@ exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee
     } finally {
         await api.disconnect();
     }
-  }
+}

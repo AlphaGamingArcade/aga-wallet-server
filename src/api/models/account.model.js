@@ -102,7 +102,7 @@ module.exports = class Account {
         
         const params = {
             tablename: "wallet_account", 
-            columns: ["account_id", "account_user_id", "account_code", "account_status", "account_created_at", "account_updated_at"], 
+            columns: ["account_id", "account_user_id", "account_code", "account_status","account_address", "account_created_at", "account_updated_at"], 
             condition,
             sortBy,
             orderBy,
