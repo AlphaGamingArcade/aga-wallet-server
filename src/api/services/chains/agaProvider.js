@@ -291,22 +291,53 @@ exports.listAssets = async () => {
     const wsProvider = new WsProvider(provider); // Replace with your node endpoint
     const api = await ApiPromise.create({ provider: wsProvider });
     await api.isReady;  
+
     try {
+        // Retrieve all asset entries
         const assetEntries = await api.query.assets.asset.entries();
-        const assets = assetEntries.map(asset => {
-            return { id: asset[0].toHuman()[0], ...asset[1].toHuman() }
-        });
-        return { assets };
-     } catch (error) {
-        console.log(error)
+
+        // Fetch metadata for each asset and map over entries
+        const assets = await Promise.all(
+            assetEntries.map(async ([key, assetData]) => {
+                const assetId = key.args[0]; // Extract asset ID
+                const metadata = await api.query.assets.metadata(assetId); // Fetch metadata for the asset
+                const { owner, supply } = assetData.toHuman();
+                
+                console.log(assetData.toHuman())
+
+                return {
+                    id: assetId.toString(),
+                    owner,
+                    supply,
+                    name: metadata.name.toUtf8(),         // Asset name
+                    symbol: metadata.symbol.toUtf8(),     // Asset symbol
+                    decimals: metadata.decimals.toNumber() // Asset decimals
+                };
+            })
+        );
+
+         // Add the native utility token
+         const nativeTokenSupply = await api.query.balances.totalIssuance();
+         const nativeToken = {
+             id: 'Native',            // Custom identifier for the native token
+             owner: 'N/A',            // Typically there’s no single owner for the native token
+             supply: nativeTokenSupply.toHuman(),
+             name: 'AGA',   // Set a descriptive name
+             symbol: 'AGA',          // Symbol for the utility token
+             decimals: 12             // Common default for Substrate chains, adjust if necessary
+         };
+
+        return { assets: [nativeToken, ...assets, ] };
+    } catch (error) {
+        console.error('Error retrieving assets:', error);
         throw new APIError({
             status: httpStatus.INTERNAL_SERVER_ERROR,
             message: 'Failed retrieving assets.',
         });
-     } finally {
+    } finally {
         await api.disconnect();
-     }
-}
+    }
+};
 
 exports.getChainProperties = async () => { 
      // Connect to the blockchain node
@@ -334,8 +365,7 @@ exports.getAccountTokensBalance = async (walletAddress) => {
     await api.isReady;
 
     const now = await api.query.timestamp.now();
-    const { nonce, data: balance } = await api.query.system.account(walletAddress);
-    const nextNonce = await api.rpc.system.accountNextIndex(walletAddress);
+    const { data: balance } = await api.query.system.account(walletAddress);
     const tokenMetadata = api.registry.getChainProperties();
     const existentialDeposit = await api.consts.balances.existentialDeposit;
   
