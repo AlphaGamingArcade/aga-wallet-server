@@ -126,24 +126,63 @@ exports.swapExactTokensForTokens = async (req, res, next) => {
             ['account_mnemonic', 'account_password']
         )
         const mnemonic = await Account.decryptMnemonic(account, password);
-        const result = await agaProvider.swapExactTokensForTokens(mnemonic, pair, amount_in, amount_out_min);
+        const result = await agaProvider.swapExactTokensForTokens({
+            mnemonic, 
+            pair, 
+            amount_in, 
+            amount_out_min
+        });
         return res.json(result)
     } catch (error) {
         return next(error)  
     }
 }
 
-
-exports.addLiquidityPool = async (req, res, next) => {
+exports.listLiquidityPools = async (req, res, next) => {
     try {
-        const { amount1_desired, amount2_desired, amount1_min, amount2_min, password } = req.body;
+        return res.json({ message: "Okay"})
+    } catch (error) {
+        return next(error)
+    }
+}
+
+exports.createLiquidityPool = async (req, res, next) => {
+    try {
+        const { password, ...liquidityData } = req.body;
         const account = await Account.getByAddress(req.params.account_address, 
             ['account_mnemonic', 'account_password']
         )
         const mnemonic = await Account.decryptMnemonic(account, password);
+        const result = await agaProvider.createPool({ mnemonic, ...liquidityData });
+        return res.json(result)
+    } catch (error) {
+        return next(error)
+    }
+}
 
-        return res.json({ message: "Add Liquidity Pool"})
+exports.addLiquidity = async (req, res, next) => {
+    try {
+        const { password, ...liquidityData } = req.body;
+        const account = await Account.getByAddress(req.params.account_address, 
+            ['account_mnemonic', 'account_password']
+        )
+        const mnemonic = await Account.decryptMnemonic(account, password);
+        const result = await agaProvider.addLiquidity({ mnemonic, ...liquidityData });
+        return res.json(result)
+    } catch (error) {
+        return next(error)
+    }
+}
 
+exports.removeLiquidity = async (req, res, next) => {
+    try {
+        const { password, ...liquidityData } = req.body;
+        const account = await Account.getByAddress(req.params.account_address, 
+            ['account_mnemonic', 'account_password']
+        )
+        const mnemonic = await Account.decryptMnemonic(account, password);
+        const result = await agaProvider.removeLiquidity({ mnemonic, ...liquidityData });
+        return res.json(result)
     } catch (error) {
         return next(error)
     }

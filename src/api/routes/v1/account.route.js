@@ -3,7 +3,7 @@ const { validate } = require('express-validation');
 const accountController = require('../../controllers/account.controller');
 const transactionController = require('../../controllers/transaction.controller');
 const agaController = require('../../controllers/aga.controller');
-const { getAccount, accountSwapExactTokensForTokens } = require("../../validations/account.validation");
+const { getAccount, accountSwapExactTokensForTokens, accountAddLiquidity, accountRemoveLiquidity, accountCreateLiquidityPool } = require("../../validations/account.validation");
 const { authorize } = require("../../middlewares/auth");
 const { listAccountTransactions, sendTransaction } = require("../../validations/transaction.validation");
 const { authorizeCloudMessaging } = require('../../middlewares/cloudMessaging');
@@ -31,5 +31,21 @@ router
 router
   .route('/:account_address/swaps/swap-exact-tokens-for-tokens')
   .post(validate(accountSwapExactTokensForTokens), agaController.swapExactTokensForTokens); 
+
+// /**
+//  * Liquidity Pools
+//  */
+
+router
+  .route('/:account_address/liquidity-pools/create-pool')
+  .post(validate(accountCreateLiquidityPool), agaController.createLiquidityPool);
+
+router
+  .route('/:account_address/liquidity-pools/add-liquidity')
+  .post(validate(accountAddLiquidity), agaController.addLiquidity);
+
+router
+  .route('/:account_address/liquidity-pools/remove-liquidity')
+  .post(validate(accountRemoveLiquidity), agaController.removeLiquidity);
 
 module.exports = router

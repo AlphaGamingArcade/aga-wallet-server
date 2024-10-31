@@ -92,6 +92,7 @@ module.exports = class Account {
         }
 
         throw new APIError({
+            message: "Account not found",
             status: httpStatus.NOT_FOUND,
             isPublic: true,
         });
@@ -131,11 +132,10 @@ module.exports = class Account {
             };
         } catch (error) {
             console.log(error)
-            const err = {
+            throw new APIError({
                 message: "Error retrieving accounts",
                 status: httpStatus.INTERNAL_SERVER_ERROR
-            };
-            throw new APIError(err);
+            });
         }
     }
 

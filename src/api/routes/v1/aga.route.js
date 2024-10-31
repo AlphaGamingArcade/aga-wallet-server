@@ -17,10 +17,13 @@ router.route('/assets')
 router.route('/accounts/:account_id/assets')
     .get(validate(accountListAssets), agaController.accountListAssets);
 
+router.route('/liquidity-pools')
+    .get(agaController.getPools);
+
 router.route('/swaps/pools')
     .get(agaController.getPools);
 
-router.route('/swaps/quote-price-exact-token-for-tokens')
+router.route('/swaps/quote-price-exact-tokens-for-tokens')
     .post(
         validate(getQuotePriceExactTokensForTokens), 
         agaController.getQuotePriceExactTokensForTokens

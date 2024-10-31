@@ -5,8 +5,6 @@ const httpStatus = require('http-status');
 const APIError = require('../../errors/api-error');
 const BigNumber = require('bignumber.js');
 const { formatDecimalsFromToken } = require('../../utils/helper');
-const Asset = require('../../models/asset.model');
-const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require('../../utils/constants');
 const { u8aToHex } = require('@polkadot/util');
 
 exports.convertToPlanks = (amountPerUnit) => {
@@ -256,65 +254,57 @@ exports.getTransactions = async (options) => {
             });
         }
     } catch (error) {
-        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving assets.',
+        });
     } finally {
         // Disconnect from the node
         await api.disconnect();
     }
 }
 
-exports.listAssets = async () => {
-    try {
-        const result = await Asset.list({
-            limit: DEFAULT_QUERY_LIMIT, 
-            offset: DEFAULT_QUERY_OFFSET, 
-            condition: `asset_network_id=${1}`, 
-            sortBy: "asset_id", 
-            orderBy: "asc"
-        })
+const pageSize = 10; // Number of items per page
+let startKey = null;
 
-        const assets = result.assets.map((asset) => ({
-            id: asset.asset_native === 'y' ? null : asset.asset_id,
-            icon: '',
-            name: asset.asset_name,
-            decimals: asset.asset_decimals.toString(),
-            symbol: asset.asset_symbol,
-            contract: asset.asset_contract
-        }))
+async function getAssetKeysPaged(api) {
+  const keys = await api.rpc.state.getKeysPaged(
+    api.query.assets.asset.key(), // The storage key prefix for assets
+    pageSize,
+    startKey
+  );
+  
+  // Use these keys to fetch the actual asset data
+  const assets = await Promise.all(
+    keys.map(key => api.query.assets.asset(key))
+  );
 
-        return { assets: assets }
-     } catch (error) {
-        console.log(error)
-     }
+  // Update the startKey for the next page
+  startKey = keys.length > 0 ? keys[keys.length - 1] : null;
+
+  return assets;
 }
 
-exports.listAssetsNotUSed = async () => {
+
+exports.listAssets = async () => {
     // Connect to the blockchain node
     const wsProvider = new WsProvider(provider); // Replace with your node endpoint
     const api = await ApiPromise.create({ provider: wsProvider });
-
+    await api.isReady;  
     try {
-        let chainAssets = [];
-        const assets = await api.query.assets.asset.keys();
-        
-        for (let asset of assets) {
-            const assetId = asset.args[0].toHuman();
-            const assetDetails = await api.query.assets.asset(assetId);
-            const assetMetadata = await api.query.assets.metadata(assetId);
-            const assetData = {
-                asset_id: assetId,
-                asset_details: assetDetails.toHuman(),
-                asset_metadata: assetMetadata.toHuman()
-            }
-            chainAssets.push(assetData)
-        }
-
-        return { assets: chainAssets }
+        const assetEntries = await api.query.assets.asset.entries();
+        const assets = assetEntries.map(asset => {
+            return { id: asset[0].toHuman()[0], ...asset[1].toHuman() }
+        });
+        return { assets };
      } catch (error) {
-         console.log(error)
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving assets.',
+        });
      } finally {
-         // Disconnect from the node
-         await api.disconnect();
+        await api.disconnect();
      }
 }
 
@@ -328,6 +318,11 @@ exports.getChainProperties = async () => {
         const tokenMetadata = api.registry.getChainProperties();
         return tokenMetadata
     } catch (error) {
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving chain properties.',
+        });
+    } finally {
         await api.disconnect();
     }
 }
@@ -383,8 +378,6 @@ exports.getAccountTokensBalance = async (walletAddress) => {
     const tokenDecimals = tokenMetadata?.tokenDecimals.toHuman();
     const tokenSymbol = tokenMetadata?.tokenSymbol.toHuman();
   
-    console.log(`${now}: balance of ${balance?.free} and a current nonce of ${nonce} and next nonce of ${nextNonce}`);
-  
     const balanceFormatted = formatDecimalsFromToken(balance?.free.toString(), tokenDecimals);
   
     return {
@@ -407,7 +400,10 @@ exports.getPools = async () => {
         const pools = await api.query.assetConversion.pools.entries();
         return pools.map(([key, value]) => [key.args[0], value ])
     } catch (error) {
-        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving pools.',
+        });
     } finally {
         await api.disconnect();
     }
@@ -480,7 +476,9 @@ exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee
     }
   };
   
-exports.swapExactTokensForTokens = async (mnemonic, pair, amountValue, minAmountValue) => {
+exports.swapExactTokensForTokens = async () => {
+    const { mnemonic, pair, amount_in, amount_out_min } = options;
+
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
     await api.isReady;
@@ -492,8 +490,8 @@ exports.swapExactTokensForTokens = async (mnemonic, pair, amountValue, minAmount
 
         const swap = api.tx.assetConversion.swapExactTokensForTokens(
             [pair[0], pair[1]], // path array
-            amountValue, // amount of tokens to swap
-            minAmountValue, // minimum amount of token2 user wants to receive
+            amount_in, // amount of tokens to swap
+            amount_out_min, // minimum amount of token2 user wants to receive
             sender.address, // address to receive swapped tokens
             false // Keep alive parameter
         )
@@ -511,6 +509,273 @@ exports.swapExactTokensForTokens = async (mnemonic, pair, amountValue, minAmount
                         const { documentation, name, section } = decoded;
         
                         errorMsg = `${section}.${name}: ${documentation.join(' ')}`;
+                        } else {
+                        errorMsg = dispatchError.toString();
+                        }
+                    } else if (section === 'system' && method === 'ExtrinsicSuccess') {
+                        success = true;
+                    }
+                });
+    
+                if (success) {
+                    resolve({
+                        message: `Transaction included in block: ${status.asInBlock.toHex()}`,
+                        block_hash: status.asInBlock.toHex(),
+                        transaction_hash: swap.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
+                        success: true
+                    });
+                } else {
+                    resolve({
+                        message: `Transaction failed: ${errorMsg}`,
+                        block_hash: status.asInBlock.toHex(),
+                        transaction_hash: swap.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
+                        success: false
+                    });
+                }
+            } else if (status.isFinalized) {
+                resolve({
+                    message: `Transaction finalized in block: ${status.asFinalized.toHex()}`,
+                    block_hash: status.asFinalized.toHex(),
+                    transaction_hash: swap.hash.toHex(),
+                    timestamp: timestamp.toNumber().toString(),
+                    success: true
+                });
+            }
+            }).catch(error => {
+                reject(error);
+            });
+        });
+        return result;
+
+    } catch (error) {
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message,
+        });
+    } finally {
+        await api.disconnect();
+    }
+}
+
+// exports.listLiquidityPools = async () => {
+//     const { mnemonic, pair, amount_in, amount_out_min } = options;
+
+//     const wsProvider = new WsProvider(provider);
+//     const api = await ApiPromise.create({ provider: wsProvider });
+//     await api.isReady;
+
+//     try {
+
+//     } catch (error) {
+        
+//     } finally {
+//         await api.disconnect();
+//     }
+// }
+
+exports.createPool = async (options) => {
+    const { mnemonic, pair } = options;
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+    try {
+        const keyring = new Keyring({ type: 'sr25519' });
+        const sender = keyring.addFromMnemonic(mnemonic);
+        const { nonce } = await api.query.system.account(sender.address);
+        const timestamp = await api.query.timestamp.now();
+
+        const pool = api.tx.assetConversion.createPool(pair[0],pair[1]);
+        const result = await new Promise((resolve, reject) => {
+            pool.signAndSend(sender, { nonce }, ({ events = [], status }) => {
+            if (status.isInBlock) {
+                let success = false;
+                let errorMsg = '';
+    
+                events.forEach(({ event: { data, method, section }, phase }) => {
+                    if (section === 'system' && method === 'ExtrinsicFailed') {
+                        const [dispatchError] = data;
+                        if (dispatchError.isModule) {
+                        const decoded = api.registry.findMetaError(dispatchError.asModule);
+                        const { docs, name, section } = decoded;
+
+                        errorMsg = `${section}.${name}: ${docs.join(' ')}`;
+                        } else {
+                        errorMsg = dispatchError.toString();
+                        }
+                    } else if (section === 'system' && method === 'ExtrinsicSuccess') {
+                        success = true;
+                    }
+                });
+    
+                if (success) {
+                    resolve({
+                        message: `Transaction included in block: ${status.asInBlock.toHex()}`,
+                        block_hash: status.asInBlock.toHex(),
+                        transaction_hash: pool.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
+                        success: true
+                    });
+                } else {
+                    resolve({
+                        message: `Transaction failed: ${errorMsg}`,
+                        block_hash: status.asInBlock.toHex(),
+                        transaction_hash: pool.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
+                        success: false
+                    });
+                }
+            } else if (status.isFinalized) {
+                resolve({
+                    message: `Transaction finalized in block: ${status.asFinalized.toHex()}`,
+                    block_hash: status.asFinalized.toHex(),
+                    transaction_hash: swap.hash.toHex(),
+                    timestamp: timestamp.toNumber().toString(),
+                    success: true
+                });
+            }
+            }).catch(error => {
+                reject(error);
+            });
+        });
+        return result;
+
+    } catch (error) {
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message,
+        });
+    } finally {
+        await api.disconnect();
+    }
+
+}
+
+
+exports.addLiquidity = async (options) => {
+    const { mnemonic, pair, amount1_desired, amount2_desired, amount1_min, amount2_min } = options;
+    console.log("Options", options)
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+    try {
+        const keyring = new Keyring({ type: 'sr25519' });
+        const sender = keyring.addFromMnemonic(mnemonic);
+        const { nonce } = await api.query.system.account(sender.address);
+        const timestamp = await api.query.timestamp.now();
+
+        const swap = api.tx.assetConversion.addLiquidity(
+            pair[0],
+            pair[1],
+            amount1_desired, // desired amount of token1 to provide as liquidity (calculations happen when tx in executed)
+            amount2_desired, // desired amount of token2 to provide as liquidity
+            amount1_min, // minimum amount of token1 to provide as liquidity
+            amount2_min, // minimum amount of token2 to provide as liquidity
+            sender.address, // address to receive swapped tokens
+        )
+
+        const result = await new Promise((resolve, reject) => {
+            swap.signAndSend(sender, { nonce }, ({ events = [], status }) => {
+            if (status.isInBlock) {
+                let success = false;
+                let errorMsg = '';
+    
+                events.forEach(({ event: { data, method, section }, phase }) => {
+                    if (section === 'system' && method === 'ExtrinsicFailed') {
+                        const [dispatchError] = data;
+                        if (dispatchError.isModule) {
+                        const decoded = api.registry.findMetaError(dispatchError.asModule);
+                        const { docs, name, section } = decoded;
+
+                        errorMsg = `${section}.${name}: ${docs.join(' ')}`;
+                        } else {
+                        errorMsg = dispatchError.toString();
+                        }
+                    } else if (section === 'system' && method === 'ExtrinsicSuccess') {
+                        success = true;
+                    }
+                });
+    
+                if (success) {
+                    resolve({
+                        message: `Transaction included in block: ${status.asInBlock.toHex()}`,
+                        block_hash: status.asInBlock.toHex(),
+                        transaction_hash: swap.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
+                        success: true
+                    });
+                } else {
+                    resolve({
+                        message: `Transaction failed: ${errorMsg}`,
+                        block_hash: status.asInBlock.toHex(),
+                        transaction_hash: swap.hash.toHex(),
+                        timestamp: timestamp.toNumber().toString(),
+                        success: false
+                    });
+                }
+            } else if (status.isFinalized) {
+                resolve({
+                    message: `Transaction finalized in block: ${status.asFinalized.toHex()}`,
+                    block_hash: status.asFinalized.toHex(),
+                    transaction_hash: swap.hash.toHex(),
+                    timestamp: timestamp.toNumber().toString(),
+                    success: true
+                });
+            }
+            }).catch(error => {
+                reject(error);
+            });
+        });
+        return result;
+
+    } catch (error) {
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message,
+        });
+    } finally {
+        await api.disconnect();
+    }
+}
+
+exports.removeLiquidity = async (options) => {
+    const { mnemonic, pair, lp_token_amount, amount1_min_receive, amount2_min_receive } = options;
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+    try {
+        const keyring = new Keyring({ type: 'sr25519' });
+        const sender = keyring.addFromMnemonic(mnemonic);
+        const { nonce } = await api.query.system.account(sender.address);
+        const timestamp = await api.query.timestamp.now();
+
+        const swap = api.tx.assetConversion.removeLiquidity(
+            pair[0],
+            pair[1],
+            lp_token_amount, // desired amount of token1 to provide as liquidity (calculations happen when tx in executed)
+            amount1_min_receive, // desired amount of token2 to provide as liquidity
+            amount2_min_receive, // minimum amount of token1 to provide as liquidity
+            sender.address, // address to receive swapped tokens
+        )
+
+        const result = await new Promise((resolve, reject) => {
+            swap.signAndSend(sender, { nonce }, ({ events = [], status }) => {
+            if (status.isInBlock) {
+                let success = false;
+                let errorMsg = '';
+    
+                events.forEach(({ event: { data, method, section }, phase }) => {
+                    if (section === 'system' && method === 'ExtrinsicFailed') {
+                        const [dispatchError] = data;
+                        if (dispatchError.isModule) {
+                        const decoded = api.registry.findMetaError(dispatchError.asModule);
+                        const { docs, name, section } = decoded;
+        
+                        errorMsg = `${section}.${name}: ${docs.join(' ')}`;
                         } else {
                         errorMsg = dispatchError.toString();
                         }
