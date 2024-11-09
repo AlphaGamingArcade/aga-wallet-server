@@ -17,6 +17,7 @@ exports.getAddress = async (req, res, next) => {
             ['account_mnemonic', 'account_password'] // Excluded feilds
         )
         const mnemonic = await Account.decryptMnemonic(account, accountPassword);
+        console.log(mnemonic)
         const keyring = new Keyring({ type: 'sr25519' });
         const substratePair = keyring.createFromUri(mnemonic);
         res.send(substratePair.address);
@@ -111,6 +112,7 @@ exports.getQuotePriceExactTokensForTokens = async (req, res, next) => {
         return res.json({
             pair,
             quote_amount: withFeeQuotePriceExactTokens,
+            quote_amount_without_fee: noFeeQuotePriceExactTokens,
             swap_fee: swapFee,
             price_impact_in_percent: priceImpact
         })

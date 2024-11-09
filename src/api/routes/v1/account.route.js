@@ -30,7 +30,11 @@ router
  */
 router
   .route('/:account_address/swaps/swap-exact-tokens-for-tokens')
-  .post(validate(accountSwapExactTokensForTokens), agaController.swapExactTokensForTokens); 
+  .post(
+    authorize(),
+    validate(accountSwapExactTokensForTokens), 
+    agaController.swapExactTokensForTokens
+  ); 
 
 // /**
 //  * Liquidity Pools
@@ -38,14 +42,26 @@ router
 
 router
   .route('/:account_address/liquidity-pools/create-pool')
-  .post(validate(accountCreateLiquidityPool), agaController.createLiquidityPool);
+  .post(
+    authorize(),
+    validate(accountCreateLiquidityPool), 
+    agaController.createLiquidityPool
+  );
 
 router
   .route('/:account_address/liquidity-pools/add-liquidity')
-  .post(validate(accountAddLiquidity), agaController.addLiquidity);
+  .post(
+    authorize(),
+    validate(accountAddLiquidity), 
+    agaController.addLiquidity
+  );
 
 router
   .route('/:account_address/liquidity-pools/remove-liquidity')
-  .post(validate(accountRemoveLiquidity), agaController.removeLiquidity);
+  .post(
+    authorize(),
+    validate(accountRemoveLiquidity), 
+    agaController.removeLiquidity
+  );
 
 module.exports = router

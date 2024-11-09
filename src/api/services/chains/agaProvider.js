@@ -358,13 +358,15 @@ exports.getChainProperties = async () => {
     }
 }
 
+
 exports.getAccountTokensBalance = async (walletAddress) => {
     // Connect to the blockchain node
     const wsProvider = new WsProvider(provider); // Replace with your node endpoint
     const api = await ApiPromise.create({ provider: wsProvider });
     await api.isReady;
 
-    const now = await api.query.timestamp.now();
+    try {
+        const now = await api.query.timestamp.now();
     const { data: balance } = await api.query.system.account(walletAddress);
     const tokenMetadata = api.registry.getChainProperties();
     const existentialDeposit = await api.consts.balances.existentialDeposit;
@@ -418,6 +420,14 @@ exports.getAccountTokensBalance = async (walletAddress) => {
       tokenSymbol: Array.isArray(tokenSymbol) ? tokenSymbol?.[0] : "",
       assets: myAssetTokenData,
     };
+    } catch (error) {
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving pools.',
+        });
+    } finally {
+        await api.disconnect();
+    }
 };
 
 
@@ -461,12 +471,21 @@ exports.getReserves = async (pair) => {
       
         // decode response
         const decoded = api.createType('Option<(u128, u128)>', reserves);
+
+        // Check if the result is null
+        if(decoded.isNone){
+            throw new APIError({
+                status: httpStatus.NOT_FOUND,
+                message: 'Reserves not found.',
+            });
+        }
+
         return decoded.toHuman()
     } catch (error) {
         console.log(error)
         throw new APIError({
-            status: httpStatus.INTERNAL_SERVER_ERROR,
-            message: 'Failed retrieving reserves.',
+            status: error.status || httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message || "Failed retrieving reserves",
         });
     } finally {
         await api.disconnect();
@@ -479,34 +498,42 @@ exports.getQuotePriceExactTokensForTokens = async (pair, amountValue, includeFee
     await api.isReady;
 
     try {
-      const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
-      const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
-      const amount = api.createType('u128', amountValue).toU8a();
-      const includeFeeValue = api.createType('bool', includeFee).toU8a();
-  
-      const encodedInput = new Uint8Array(asset1.length + asset2.length + amount.length + includeFeeValue.length);
-      encodedInput.set(asset1, 0);
-      encodedInput.set(asset2, asset1.length);
-      encodedInput.set(amount, asset1.length + asset2.length);
-      encodedInput.set(includeFeeValue, asset1.length + asset2.length + amount.length);
-  
-      const encodedInputHex = u8aToHex(encodedInput);
-      const response = await api.rpc.state.call('AssetConversionApi_quote_price_exact_tokens_for_tokens', encodedInputHex);
-      const decodedPrice = api.createType('Option<u128>', response);
-  
-      return decodedPrice.toString();
+        const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]).toU8a();
+        const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]).toU8a();
+        const amount = api.createType('u128', amountValue).toU8a();
+        const includeFeeValue = api.createType('bool', includeFee).toU8a();
+    
+        const encodedInput = new Uint8Array(asset1.length + asset2.length + amount.length + includeFeeValue.length);
+        encodedInput.set(asset1, 0);
+        encodedInput.set(asset2, asset1.length);
+        encodedInput.set(amount, asset1.length + asset2.length);
+        encodedInput.set(includeFeeValue, asset1.length + asset2.length + amount.length);
+    
+        const encodedInputHex = u8aToHex(encodedInput);
+        const response = await api.rpc.state.call('AssetConversionApi_quote_price_exact_tokens_for_tokens', encodedInputHex);
+        const decodedPrice = api.createType('Option<u128>', response);
+
+        // Check if the result is null
+        if(decodedPrice.isNone){
+            throw new APIError({
+                status: httpStatus.NOT_FOUND,
+                message: 'Quote not found for this asset pair.',
+            });
+        }
+
+        return decodedPrice.toString();
     } catch (error) {
         console.log(error)
         throw new APIError({
-            status: httpStatus.INTERNAL_SERVER_ERROR,
-            message: 'Failed to get swap quote',
+            status: error.status || httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message || "Failed retriving quote price",
         });
     } finally {
       await api.disconnect();
     }
   };
   
-exports.swapExactTokensForTokens = async () => {
+exports.swapExactTokensForTokens = async (options) => {
     const { mnemonic, pair, amount_in, amount_out_min } = options;
 
     const wsProvider = new WsProvider(provider);
