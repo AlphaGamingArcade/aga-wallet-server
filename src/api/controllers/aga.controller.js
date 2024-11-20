@@ -3,6 +3,7 @@ const agaProvider = require("./../services/chains/agaProvider");
 const Account = require("../models/account.model");
 const { Keyring } = require('@polkadot/keyring');
 const { default: Decimal } = require("decimal.js");
+const { convertHexToString } = require("../utils/formatter");
 
 exports.get = async (req, res) => {
     res.send("AGA")
@@ -17,7 +18,6 @@ exports.getAddress = async (req, res, next) => {
             ['account_mnemonic', 'account_password'] // Excluded feilds
         )
         const mnemonic = await Account.decryptMnemonic(account, accountPassword);
-        console.log(mnemonic)
         const keyring = new Keyring({ type: 'sr25519' });
         const substratePair = keyring.createFromUri(mnemonic);
         res.send(substratePair.address);
@@ -49,13 +49,18 @@ exports.accountListAssets = async (req, res, next) => {
             symbol: tokenBalance.tokenSymbol
         }
 
-        const tokens = tokenBalance.assets.flatMap(asset => ({
-            id: asset.tokenId,
-            icon: "",
-            balance: asset.tokenAsset.balance,
-            decimals: asset.assetTokenMetadata.decimals,
-            symbol: asset.assetTokenMetadata.symbol
-        }))
+        const tokens = tokenBalance.assets.flatMap(asset => {
+            const symbol = convertHexToString(asset.assetTokenMetadata.symbol);
+            return {
+                id: asset.tokenId,
+                icon: "",
+                balance: asset.tokenAsset.balance,
+                decimals: asset.assetTokenMetadata.decimals,
+                name: asset.name,
+                symbol,
+
+            }
+        })
 
         const assets = { assets: [nativeAsset, ...tokens] }
         res.status(httpStatus.OK);

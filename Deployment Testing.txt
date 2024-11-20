@@ -1,0 +1,20 @@
+# Deploying the Solidity Smart Contract
+
+## Deploy the token contract (AGA Token)
+After token deployment, make sure to unpause it because it is paused initially(when paused only the owner can transfer tokens at this time)
+- After deployment get it's contract address
+
+## Deploy the Default message receiver contract under AGA Bridge
+- After deployment get it's contract address
+
+## Deploy the AGABridge under AGA BRIDGE
+- After deployment get it's contract address
+- Make sure to unpause it because it is paused initially
+
+## Deploy the ERC Handler provided with DefaultMessageReceiver Contract Address and the AGA Bridge Contract Address
+- Get the contract Address
+
+## Make sure to transfer all Token to the ERC Handler contract address
+
+
+
