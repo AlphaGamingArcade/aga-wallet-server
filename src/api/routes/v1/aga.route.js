@@ -17,8 +17,14 @@ router.route('/assets')
 router.route('/accounts/:account_id/assets')
     .get(validate(accountListAssets), agaController.accountListAssets);
 
+router.route('/accounts/:account_id/pool-assets')
+    .get(validate(accountListAssets), agaController.accountListPoolAssets);
+
 router.route('/liquidity-pools')
     .get(agaController.getPools);
+
+router.route('/pool-assets')
+    .get(agaController.listPoolAssets);
 
 router.route('/swaps/pools')
     .get(agaController.getPools);

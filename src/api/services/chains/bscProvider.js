@@ -1,14 +1,15 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
-const { Keyring } = require('@polkadot/keyring');
+const { Keyring, decodeAddress } = require('@polkadot/keyring');
 const { bscProvider: provider, bscProvider } = require('../../../config/vars');
 const httpStatus = require('http-status');
 const APIError = require('../../errors/api-error');
 const BigNumber = require('bignumber.js');
 const { formatDecimalsFromToken } = require('../../utils/helper');
 
-const { JsonRpcProvider, formatEther, formatUnits, Contract } = require("ethers");
+const { JsonRpcProvider, formatEther, formatUnits, Contract, ethers, parseEther } = require("ethers");
 const Asset = require('../../models/asset.model');
 const { DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET } = require('../../utils/constants');
+const { u8aToHex } = require('@polkadot/util');
 
 exports.convertToPlanks = (amountPerUnit) => {
     const plancksPerUnit = 1000000000000;
@@ -102,43 +103,751 @@ exports.substrateTransferAsset = async (transferAssetObject) => {
     }
 };
 
-exports.getAccountNativeTokenBalance = async (walletAddress) => {
+exports.getAccountListAssets = async (walletAddress) => {
     // (i.e. ``http:/\/localhost:8545``)
     const provider = new JsonRpcProvider(bscProvider);
-    // Get the BNB balance of the wallet
-    const balance = await provider.getBalance(walletAddress);
+    try {
+        // Get the BNB balance of the wallet
+        const rawBscBalance = await provider.getBalance(walletAddress);
+        const bscBalance = rawBscBalance.toString();
 
-    return {
-        balance: formatEther(balance)
+        const nativeAsset = {
+            id: "Native",
+            owner: "N/A",
+            balance: bscBalance,
+            supply: "N/A",
+            symbol: "BSC",
+            decimals: 18
+        }
+
+        const AGA_CONTRACT_ADDRESS = "0xa51Afd67b83c5f8d613F7d02Ad4D0861E527E077";
+        const erc20ABI = [
+            {
+                "constant": true,
+                "inputs": [{ "name": "account", "type": "address" }],
+                "name": "balanceOf",
+                "outputs": [{ "name": "", "type": "uint256" }],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [{ "name": "", "type": "uint8" }],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [{ "name": "", "type": "uint256" }],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "owner",
+                "outputs": [{ "name": "", "type": "address" }],
+                "type": "function"
+            }
+        ];
+
+        // Create a contract instance
+        const contract = new Contract(AGA_CONTRACT_ADDRESS, erc20ABI, provider);
+
+        // Fetch the raw token balance
+        const rawAgaBalance = await contract.balanceOf(walletAddress);
+        const agaBalance = rawAgaBalance.toString();
+        const rawAgaTotalSupply = await contract.totalSupply();
+        const agaTotalSupply = rawAgaTotalSupply.toString();
+        const tokenOwner = await contract.owner();
+
+        const agaAsset = {
+            id: AGA_CONTRACT_ADDRESS,
+            owner: tokenOwner,
+            supply: agaTotalSupply,
+            balance: agaBalance,
+            name: "AGA",
+            symbol: "AGA",
+            decimals: 12
+        }
+        
+        return [nativeAsset, agaAsset]
+    } catch (error) {
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message,
+        });
+    } finally {
+        await provider.destroy();
     }
-    
-        // // ERC-20 contract address (replace with the contract address you provided)
-        // const contractAddress = '0xCd89AB6fC955e3092B20fa81990808581740d7f6';
+}
 
-        // // Minimal ERC-20 ABI
-        // const ERC20_ABI = [
-        //     "function balanceOf(address owner) view returns (uint256)"
-        // ];
+exports.getDepositFee = async (options) => {
+    const { sender, amount, recipient } = options;
+    const provider = new JsonRpcProvider(bscProvider);
+    try {
+        const FEE_ROUTER_CONTRACT = "0x0be5C15B5aBCF0D6455366bD1424b43210aE35A7";
+        const FEE_ROUTER_ABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "bridgeAddress",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "inputs": [],
+                "name": "AccessControlBadConfirmation",
+                "type": "error"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "neededRole",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "AccessControlUnauthorizedAccount",
+                "type": "error"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "IncorrectFeeSupplied",
+                "type": "error"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint8",
+                        "name": "fromDomainID",
+                        "type": "uint8"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint8",
+                        "name": "destinationDomainID",
+                        "type": "uint8"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "bytes32",
+                        "name": "resourceID",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "fee",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "tokenAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "FeeCollected",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "tokenAddress",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "FeeDistributed",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "bytes32",
+                        "name": "role",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "bytes32",
+                        "name": "previousAdminRole",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "bytes32",
+                        "name": "newAdminRole",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "RoleAdminChanged",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "bytes32",
+                        "name": "role",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    }
+                ],
+                "name": "RoleGranted",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "bytes32",
+                        "name": "role",
+                        "type": "bytes32"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    }
+                ],
+                "name": "RoleRevoked",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "internalType": "address",
+                        "name": "whitelistAddress",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "bool",
+                        "name": "isWhitelisted",
+                        "type": "bool"
+                    }
+                ],
+                "name": "WhitelistChanged",
+                "type": "event"
+            },
+            {
+                "inputs": [],
+                "name": "DEFAULT_ADMIN_ROLE",
+                "outputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "",
+                        "type": "bytes32"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "_bridgeAddress",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint8",
+                        "name": "",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "_domainResourceIDToFeeHandlerAddress",
+                "outputs": [
+                    {
+                        "internalType": "contract IFeeHandler",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "_whitelist",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint8",
+                        "name": "destinationDomainID",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "resourceID",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "contract IFeeHandler",
+                        "name": "handlerAddress",
+                        "type": "address"
+                    }
+                ],
+                "name": "adminSetResourceHandler",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "whitelistAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isWhitelisted",
+                        "type": "bool"
+                    }
+                ],
+                "name": "adminSetWhitelist",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "fromDomainID",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "destinationDomainID",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "resourceID",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "depositData",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "feeData",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "calculateFee",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "fee",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "tokenAddress",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "fromDomainID",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "destinationDomainID",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "resourceID",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "depositData",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "feeData",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "collectFee",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "feeHandlerType",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "pure",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "role",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "getRoleAdmin",
+                "outputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "",
+                        "type": "bytes32"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "role",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "grantRole",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "role",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "hasRole",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "role",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "callerConfirmation",
+                        "type": "address"
+                    }
+                ],
+                "name": "renounceRole",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "role",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "revokeRole",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "bytes4",
+                        "name": "interfaceId",
+                        "type": "bytes4"
+                    }
+                ],
+                "name": "supportsInterface",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
 
-        // // Create an instance of the contract
-        // const contract = new Contract(contractAddress, ERC20_ABI, provider);
+        // Create a contract instance
+        const contract = new Contract(FEE_ROUTER_CONTRACT, FEE_ROUTER_ABI, provider);
+        
+        const fromDomainID = 2;
+        const destinationDomainID = 1;
+        const resourceID = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        // Decode the address to a public key
+        const publicKey = decodeAddress(recipient);
+        const publicKeyHex = u8aToHex(publicKey);
+        // Convert amount to bytes and pad to 32 bytes
+        const amountBytes = ethers.zeroPadValue(ethers.toBeHex(amount), 32);
+        
+        // Convert recipient length to bytes and pad to 32 bytes
+        const recipientLength = ethers.zeroPadValue(ethers.toBeHex(publicKey.length), 32);
+        
+        // Concatenate all parts into a single Uint8Array
+        const depositData = ethers.concat([amountBytes, recipientLength, publicKeyHex]);
 
-        //  // Call the balanceOf function to get the balance of the wallet address
-        //  const balance = await contract.balanceOf(walletAddress);
-              
-        //  // Most ERC-20 tokens use 18 decimals, so format the result to get the human-readable value
-        //  const formattedBalance = formatUnits(balance, 18);
-         
-        // async function getTokenBalance() {
-        //     try {
-             
-          
-        //       console.log(`Token Balance: ${formattedBalance} tokens`);
-        //     } catch (error) {
-        //       console.error('Error fetching balance:', error);
-        //     }
-        // }  
-        // getTokenBalance();
+        // Fetch the raw token balance
+        const depositFee = await contract.calculateFee([
+            sender,
+            fromDomainID,
+            destinationDomainID,
+            resourceID,
+            ethers.hexlify(depositData),
+            ethers.zeroPadValue(ethers.toBeHex(0), 32)
+        ]);
+        
+        return depositFee
+    } catch (error) {
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message,
+        });
+    } finally {
+        await provider.destroy();
+    }
+}
+
+exports.deposit = async (options) => {
+    const { sender, amount, recipient } = options;
+    const provider = new JsonRpcProvider(bscProvider);
+    try {
+        const BRIDGE_CONTRACT = "0xC29eD21F4360A8Ce3AB28DdE6A55017C5a38178B";
+        const BRIDGE_ABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint8",
+                        "name": "destinationDomainID",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "resourceID",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "depositData",
+                        "type": "bytes"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "feeData",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "deposit",
+                "outputs": [
+                    {
+                        "internalType": "uint64",
+                        "name": "depositNonce",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "handlerResponse",
+                        "type": "bytes"
+                    }
+                ],
+                "stateMutability": "payable",
+                "type": "function"
+            }
+        ]
+
+        // Create a contract instance
+        const contract = new Contract(BRIDGE_CONTRACT, BRIDGE_ABI, provider);
+        
+        const destinationDomainID = 1;
+        const resourceID = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        // Decode the address to a public key
+        const publicKey = decodeAddress(recipient);
+        const publicKeyHex = u8aToHex(publicKey);
+        // Convert amount to bytes and pad to 32 bytes
+        const amountBytes = ethers.zeroPadValue(ethers.toBeHex(amount), 32);
+        
+        // Convert recipient length to bytes and pad to 32 bytes
+        const recipientLength = ethers.zeroPadValue(ethers.toBeHex(publicKey.length), 32);
+        
+        // Concatenate all parts into a single Uint8Array
+        const depositData = ethers.concat([amountBytes, recipientLength, publicKeyHex]);
+
+        const feeData = ethers.zeroPadValue(ethers.toBeHex(0), 32);
+
+        const msgValue = parseEther("0.01"); // Example: Fee amount
+        // Fetch the raw token balance
+        const deposit = await contract.deposit(
+            destinationDomainID,
+            resourceID,
+            depositData,
+            feeData, 
+            {
+                value: msgValue, // Attach ETH for fee
+            }
+        );
+        
+        return deposit
+    } catch (error) {
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message,
+        });
+    } finally {
+        await provider.destroy();
+    }
 }
 
 exports.getTransactionDetails = async (txHash) => {

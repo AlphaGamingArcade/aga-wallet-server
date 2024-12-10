@@ -1,0 +1,27 @@
+./target/release/aga-node key insert --base-path ~/tmp/bob \
+--chain local --scheme Sr25519 \
+--key-type aura \
+--suri "//Bob"
+
+./target/release/aga-node key insert --base-path ~/tmp/bob \
+--chain local --scheme Ed25519 \
+--key-type gran \
+--suri "//Bob"
+
+
+
+./target/release/aga-node key insert --base-path ~/tmp/alice \
+--chain local --scheme Sr25519 \
+--key-type aura \
+--suri "bottom drive obey lake curtain smoke basket hold race lonely fit walk"
+
+./target/release/aga-node key insert --base-path ~/tmp/alice \
+--chain local --scheme Ed25519 \
+--key-type gran \
+--suri "bottom drive obey lake curtain smoke basket hold race lonely fit walk"
+
+
+
+./target/release/aga-node --chain=local --alice --base-path ~/tmp/a --port=30334 --rpc-port 9944 --rpc-external --rpc-cors=all --rpc-methods=Unsafe
+./target/release/aga-node --chain=local --bob --base-path ~/tmp/b --port=30335 --rpc-port 9945 --ws-external --rpc-cors=all --rpc-methods=Unsafe --bootnodes /ip4/127.0.0.1/tcp/30334/p2p/12D3KooWQXBxhGvmbcb8siLZWf7bNzv3KrzEXhi9t2VbDGP57zR9
+./target/release/node-template --chain=local --charlie --base-path ~/tmp/c --port=30336 --rpc-port 9946 --rpc-external --rpc-cors=all --rpc-methods=Unsafe --bootnodes /ip4/127.0.0.1/tcp/30334/p2p/12D3KooWQXBxhGvmbcb8siLZWf7bNzv3KrzEXhi9t2VbDGP57zR9

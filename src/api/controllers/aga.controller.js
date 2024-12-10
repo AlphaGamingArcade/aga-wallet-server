@@ -50,19 +50,42 @@ exports.accountListAssets = async (req, res, next) => {
         }
 
         const tokens = tokenBalance.assets.flatMap(asset => {
+            const name = convertHexToString(asset.name);
             const symbol = convertHexToString(asset.assetTokenMetadata.symbol);
             return {
                 id: asset.tokenId,
                 icon: "",
                 balance: asset.tokenAsset.balance,
                 decimals: asset.assetTokenMetadata.decimals,
-                name: asset.name,
+                name: name,
                 symbol,
 
             }
         })
 
         const assets = { assets: [nativeAsset, ...tokens] }
+        res.status(httpStatus.OK);
+        return res.json(assets)
+    } catch (error) {
+        return next(error)
+    }
+}
+
+exports.listPoolAssets = async (_req, res, next) => {
+    try {
+        // Assets
+        const result = await agaProvider.listPoolAssets();
+        res.status(httpStatus.OK);
+        return res.json(result);   
+    } catch (error) {
+        return next(error)
+    }
+}
+
+exports.accountListPoolAssets = async (req, res, next) => {
+    try {
+        const account = req.params.account_id;
+        const assets = await agaProvider.getAccountPoolAssetsBalance(account);
         res.status(httpStatus.OK);
         return res.json(assets)
     } catch (error) {
@@ -82,6 +105,9 @@ exports.getPools = async (_req, res, next) => {
 exports.getQuotePriceExactTokensForTokens = async (req, res, next) => {
     try {
         const { pair, amount } = req.body;
+
+        const pool = await agaProvider.getLiquidityPool(pair);
+
         const [reserves, noFeeQuotePriceExactTokens, withFeeQuotePriceExactTokens] = await Promise.all([
             agaProvider.getReserves(pair),
             agaProvider.getQuotePriceExactTokensForTokens(pair, amount, false),
@@ -119,7 +145,8 @@ exports.getQuotePriceExactTokensForTokens = async (req, res, next) => {
             quote_amount: withFeeQuotePriceExactTokens,
             quote_amount_without_fee: noFeeQuotePriceExactTokens,
             swap_fee: swapFee,
-            price_impact_in_percent: priceImpact
+            price_impact_in_percent: priceImpact,
+            pool
         })
     } catch (error) {
         return next(error)

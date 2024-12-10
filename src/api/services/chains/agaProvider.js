@@ -6,6 +6,7 @@ const APIError = require('../../errors/api-error');
 const BigNumber = require('bignumber.js');
 const { formatDecimalsFromToken } = require('../../utils/helper');
 const { u8aToHex } = require('@polkadot/util');
+const { convertKeysToSnakeCase } = require('../../utils/formatter');
 
 exports.convertToPlanks = (amountPerUnit) => {
     const plancksPerUnit = 1000000000000;
@@ -227,8 +228,6 @@ exports.getTransactions = async (options) => {
         const latestHeader = await api.rpc.chain.getHeader();
         const latestBlockNumber = latestHeader.number.toNumber();
 
-        console.log(`Latest block number: ${latestBlockNumber}`);
-
         // Define the range of blocks to scan (e.g., last 100 blocks)
         const startBlockNumber = Math.max(0, latestBlockNumber - 100);
 
@@ -284,7 +283,45 @@ async function getAssetKeysPaged(api) {
 
   return assets;
 }
+exports.listPoolAssets = async () => {
+    // Connect to the blockchain node
+    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;  
 
+    try {
+        // Retrieve all asset entries
+        const assetEntries = await api.query.poolAssets.asset.entries();
+
+        // Fetch metadata for each asset and map over entries
+        const assets = await Promise.all(
+            assetEntries.map(async ([key, assetData]) => {
+                const assetId = key.args[0]; // Extract asset ID
+                const metadata = await api.query.poolAssets.metadata(assetId); // Fetch metadata for the asset
+                const { owner, supply } = assetData.toHuman();
+                
+                return {
+                    id: assetId.toString(),
+                    owner,
+                    supply,
+                    name: metadata.name.toUtf8(),         // Asset name
+                    symbol: metadata.symbol.toUtf8(),     // Asset symbol
+                    decimals: metadata.decimals.toNumber() // Asset decimals
+                };
+            })
+        );
+
+        return { assets };
+    } catch (error) {
+        console.error('Error retrieving assets:', error);
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving assets.',
+        });
+    } finally {
+        await api.disconnect();
+    }
+};
 
 exports.listAssets = async () => {
     // Connect to the blockchain node
@@ -303,7 +340,6 @@ exports.listAssets = async () => {
                 const metadata = await api.query.assets.metadata(assetId); // Fetch metadata for the asset
                 const { owner, supply } = assetData.toHuman();
                 
-                console.log(assetData.toHuman())
 
                 return {
                     id: assetId.toString(),
@@ -319,7 +355,7 @@ exports.listAssets = async () => {
          // Add the native utility token
          const nativeTokenSupply = await api.query.balances.totalIssuance();
          const nativeToken = {
-             id: 'Native',            // Custom identifier for the native token
+             id: null,            // Custom identifier for the native token
              owner: 'N/A',            // Typically there’s no single owner for the native token
              supply: nativeTokenSupply.toHuman(),
              name: 'AGA',   // Set a descriptive name
@@ -430,6 +466,100 @@ exports.getAccountTokensBalance = async (walletAddress) => {
     }
 };
 
+exports.getAccountPoolAssetsBalance = async (walletAddress) => {
+    // Connect to the blockchain node
+    const wsProvider = new WsProvider(provider); // Replace with your node endpoint
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
+    try {
+    const allAssets = await api.query.poolAssets.asset.entries();
+  
+    const allChainAssets = [];
+  
+    allAssets.forEach((item) => {
+      allChainAssets.push({ tokenData: item?.[1].toHuman(), tokenId: item?.[0].toHuman() });
+    });
+    
+    const myAssetTokenData = [];
+    const assetTokensDataPromises = [];
+  
+    for (const item of allChainAssets) {
+      const cleanedTokenId = item?.tokenId?.[0]?.replace(/[, ]/g, "");
+      assetTokensDataPromises.push(
+        Promise.all([
+          api.query.poolAssets.account(cleanedTokenId, walletAddress),
+          api.query.poolAssets.metadata(cleanedTokenId),
+        ]).then(([tokenAsset, assetTokenMetadata]) => {
+          if (tokenAsset.toHuman()) {
+            const resultObject = {
+              tokenId: cleanedTokenId,
+              assetTokenMetadata: assetTokenMetadata.toHuman(),
+              tokenAsset: tokenAsset.toHuman(),
+            };
+            return resultObject;
+          }
+          return null;
+        })
+      );
+    }
+  
+    const results = await Promise.all(assetTokensDataPromises);
+  
+    myAssetTokenData.push(...results.filter((result) => result !== null));
+
+    return { pool_assets: myAssetTokenData };
+    } catch (error) {
+        console.log(error)
+        throw new APIError({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Failed retrieving pool assets.',
+        });
+    } finally {
+        await api.disconnect();
+    }
+};
+
+
+exports.getLiquidityPool = async (pair) => {
+    const wsProvider = new WsProvider(provider);
+    const api = await ApiPromise.create({ provider: wsProvider });
+    await api.isReady;
+
+    try {
+        // Create asset types directly
+        const asset1 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[0]);
+        const asset2 = api.createType('FrameSupportTokensFungibleUnionOfNativeOrWithId', pair[1]);
+
+        // concatenate  Uint8Arrays of input parameters
+        const encodedInput = new Uint8Array(asset1.length + asset2.length);
+        encodedInput.set(asset1, 0); // Set array1 starting from index 0
+        encodedInput.set(asset2, asset1.length); // Set array2 starting from the end of array1
+        
+        // Query the pool storage
+        const pool = await api.query.assetConversion.pools([asset1, asset2]);
+
+        // decode response
+        const decoded = api.createType('Option<PalletAssetConversionPoolInfo>', pool);
+
+        // Check if the result is null
+        if(decoded.isNone){
+            throw new APIError({
+                status: httpStatus.NOT_FOUND,
+                message: 'Liquidity pool not found.',
+            });
+        }
+
+        return convertKeysToSnakeCase(decoded.toHuman())
+    } catch (error) {
+        throw new APIError({
+            status: error.status || httpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message || "Failed retrieving liquidity pool",
+        });
+    } finally {
+        await api.disconnect();
+    }
+};
 
 exports.getPools = async () => {
     const wsProvider = new WsProvider(provider); // Replace with your node endpoint
@@ -438,7 +568,8 @@ exports.getPools = async () => {
 
     try {
         const pools = await api.query.assetConversion.pools.entries();
-        return pools.map(([key, value]) => [key.args[0], value ])
+        const poolList = pools.map(([key, value]) => [key.args[0].toJSON(), value.toHuman() ])
+        return poolList
     } catch (error) {
         throw new APIError({
             status: httpStatus.INTERNAL_SERVER_ERROR,
@@ -714,7 +845,6 @@ exports.createPool = async (options) => {
 
 exports.addLiquidity = async (options) => {
     const { mnemonic, pair, amount1_desired, amount2_desired, amount1_min, amount2_min } = options;
-    console.log("Options", options)
     const wsProvider = new WsProvider(provider);
     const api = await ApiPromise.create({ provider: wsProvider });
     await api.isReady;

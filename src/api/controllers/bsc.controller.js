@@ -39,13 +39,45 @@ exports.listAssets = async (_req, res, next) => {
 exports.accountListAssets = async (req, res, next) => {
     try {
         const address = req.params.address;
+        const assets = await bscProvider.getAccountListAssets(address);
+        res.status(httpStatus.OK);
+        return res.json({ assets })
+    } catch (error) {
+        return next(error)
+    }
+}
 
-        const nativeAssets = await bscProvider.getAccountNativeTokenBalance(address);
+exports.getDepositFee = async (req, res, next) => {
+    try {
+        const sender = req.params.address;
+        const amount = req.body.amount;
+        const recipient = req.body.recipient;
+        const depositFee = await bscProvider.getDepositFee({
+            sender,
+            amount,
+            recipient
+        });
+        res.status(httpStatus.OK);
+        return res.json({ depositFee })
+    } catch (error) {
+        return next(error)
+    }
+}
 
-        console.log("Account assets", nativeAssets)
+exports.createDeposit = async (req, res, next) => {
+    try {
+        const sender = req.params.address;
+        const amount = req.body.amount;
+        const recipient = req.body.recipient;
+
+        const deposit = await bscProvider.deposit({
+            sender,
+            amount,
+            recipient
+        })
 
         res.status(httpStatus.OK);
-        return res.json({})
+        return res.json({ deposit })
     } catch (error) {
         return next(error)
     }
